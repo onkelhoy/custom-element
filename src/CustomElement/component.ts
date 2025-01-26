@@ -1,23 +1,18 @@
-import { html, papHTML } from "../html";
+import { html, PapElement, papHTML } from "../html";
 
 export class CustomElement extends HTMLElement {
 
   static observedAttributes = [];
 
-  private _domdiff: Record<string, string> = {}; // this keeps track of our DOM 
-  // the output of html should return a papDOM or something 
-
+  private _papDom: PapElement;
   private _observer!: MutationObserver;
 
   // getters 
-  get domdiff() {
-    return this._domdiff;
+  get papDOM() {
+    return this._papDom;
   }
   get root () {
     if (this.shadowRoot) return this.shadowRoot;
-
-    console.log('aw we got the element')
-
     return this as HTMLElement;
   }
 
@@ -25,6 +20,13 @@ export class CustomElement extends HTMLElement {
     super();
 
     this.attachShadow(shadowRootInit);
+    this._papDom = {
+      attributes: {},
+      children: [],
+      events: {},
+      tagName: this.tagName,
+      text: null
+    };
   }
 
   connectedCallback() {
@@ -38,12 +40,14 @@ export class CustomElement extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
-
+    console.log('attribute has changed', name, oldValue, newValue);
   }
 
   update() {
     let info = this.render();
     if (typeof info === "string") info = html`${info}`;
+
+    this._papDom = info.papDOM;
 
     this.root.innerHTML = "";
     Array.from(info.dom.body.childNodes).forEach((child) => {
