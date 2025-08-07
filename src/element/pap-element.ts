@@ -1,20 +1,15 @@
-import { html, type NodeInfo, type papHTML, } from "@html";
+import { html } from "@html";
 import { Setting } from "./types";
 import { debounceFn } from "@functions/debounce";
-import { differ } from "@html/differ";
+import { getMetadata } from "@html/html";
+// import { differ } from "@html/_differ";
 
 export class PapElement extends HTMLElement {
 
   static observedAttributes = [];
 
-  private _papDom!: NodeInfo;
-  private _observer!: MutationObserver;
-  private __internalUpdateCall = false;
+  private _initialised = false;
 
-  // getters 
-  get papDOM() {
-    return this._papDom;
-  }
   get root () {
     if (this.shadowRoot) return this.shadowRoot;
     return this as HTMLElement;
@@ -28,41 +23,51 @@ export class PapElement extends HTMLElement {
   }
 
   connectedCallback() {
-    this._observer = this._setupMutationObserver();
-
     this.update();
   }
 
-  disconnectedCallback() {
-    this._observer.disconnect();
-  }
+  disconnectedCallback() {}
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
     console.log('attribute has changed', name, oldValue, newValue);
   }
 
-  update() {
-    this.__internalUpdateCall = true;
-    let info = this.render();
-    if (typeof info === "string") info = html`${info}`;
+  firstRender() {}
 
-    if (!Object.hasOwn(this, "_papDom"))
+  update() {
+    let element = this.render();
+    if (typeof element === "string") element = html`${element}`;
+
+    if (!this._initialised)
     {
-      this._papDom = {
-        attributes: {},
-        children: info.papDOM,
-        events: {},
-        tagName: this.tagName,
-        text: null
-      };
-      
-      this.root.innerHTML = "";
-      this.root.append(info.dom);
-      return;
+      this.root.append(element);
+      const meta = getMetadata(element);
+      if (!meta) throw new Error("[html] metadata could not be found");
+
+      // HERE IS THE FOCUS FOR NOW 
+      meta.update(meta.lastValues, true);
+
+      this.firstRender();
+      this._initialised = true;
     }
+
+    // if (!Object.hasOwn(this, "_papDom"))
+    // {
+    //   this._papDom = {
+    //     attributes: {},
+    //     children: info.papDOM,
+    //     events: {},
+    //     tagName: this.tagName,
+    //     text: null
+    //   };
+      
+    //   this.root.innerHTML = "";
+    //   this.root.append(info.dom);
+    //   return;
+    // }
     
-    differ(this.papDOM, info);
-    this.__internalUpdateCall = false; // just now as we dont apply any changed 
+    // differ(this.papDOM, info);
+    // this.__internalUpdateCall = false; // just now as we dont apply any changed 
     // // now we can process html (injecting events etc)
     // // info.
 
@@ -82,7 +87,7 @@ export class PapElement extends HTMLElement {
     return this.root.querySelectorAll<T>(selectors);
   }
 
-  render():string|papHTML {
+  render():string|Element {
     return `
       <div>hello World</div>
     `
@@ -91,28 +96,28 @@ export class PapElement extends HTMLElement {
   // mutation observer 
   // WHEN DIFFING WE CAN ONLY LOOK FOR THE VALUES IN THE TEMPLATE LITERAL and then we 
   // can update only those, so the html should have a init case or something where we can keep track of those 
-  private _setupMutationObserver () {
-    const observer = new MutationObserver((mutationList) => {
-      if (this.__internalUpdateCall) return;
+  // private _setupMutationObserver () {
+  //   const observer = new MutationObserver((mutationList) => {
+  //     if (this.__internalUpdateCall) return;
 
-      for (let mutation of mutationList)
-      {
-        this._handleMutation(mutation);
-      } 
+  //     for (let mutation of mutationList)
+  //     {
+  //       this._handleMutation(mutation);
+  //     } 
 
-      this.__internalUpdateCall = false;
-    });
+  //     this.__internalUpdateCall = false;
+  //   });
 
-    observer.observe(this.root, {
-      attributes: true,
-      subtree: true,
-      childList: true,
-      characterData: true,
-    });
+  //   observer.observe(this.root, {
+  //     attributes: true,
+  //     subtree: true,
+  //     childList: true,
+  //     characterData: true,
+  //   });
 
-    return observer;
-  }
-  private _handleMutation(mutation: MutationRecord) {
-    console.log('DOM CHANGE', mutation);
-  }
+  //   return observer;
+  // }
+  // private _handleMutation(mutation: MutationRecord) {
+  //   console.log('DOM CHANGE', mutation);
+  // }
 }

@@ -3,6 +3,7 @@ import { html } from "@html";
 import { bind } from "@decorators/bind";
 import { property } from "./decorators/property";
 import { debounce } from "@decorators/debounce";
+// import { RenderAlt } from "@html/render";
 
 export class NewCore extends PapElement {
 
@@ -25,17 +26,20 @@ export class NewCore extends PapElement {
   @debounce
   private handleclick () {
     this.hello = "najjaj"
-    console.log('im clicked', this.hello, this.papDOM);
+    console.log('im clicked', this.hello);
   }
 
   @bind
   private handlesubmit() {
-    console.log('im submitted', this.papDOM);
+    console.log('im submitted');
   }
 
   render() {
-    console.log('render called', this.hello)
-    return html`
+    // console.log('render called', this.hello)
+    // const a = RenderAlt('bajs')`<p hello=${this.hello}>hello</p>`;
+    // console.log('A', a)
+
+    const elm = html`
       ${this.hello}
       <button @submit=${this.handlesubmit} onclick=${this.handleclick}>add</button>
       <ul>
@@ -44,8 +48,11 @@ export class NewCore extends PapElement {
       </ul>
       <p>hello</p>
       <div>
-        <h1>EMTUUU</h1>
+        <h1 hello=${this.hello}>EMTUUU</h1>
       </div>
-    `
+    `;
+
+    console.log('elm', elm);
+    return elm;
   }
 }

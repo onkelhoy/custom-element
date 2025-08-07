@@ -1,5 +1,5 @@
 // export 
 export {
-  Render as html,
-} from "./render.js";
+  html,
+} from "./html";
 export * from "./types";
