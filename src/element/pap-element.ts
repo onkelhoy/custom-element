@@ -1,12 +1,13 @@
 import { html, type NodeInfo, type papHTML, } from "@html";
 import { Setting } from "./types";
 import { debounceFn } from "@functions/debounce";
+import { differ } from "@html/differ";
 
 export class PapElement extends HTMLElement {
 
   static observedAttributes = [];
 
-  private _papDom: NodeInfo;
+  private _papDom!: NodeInfo;
   private _observer!: MutationObserver;
   private __internalUpdateCall = false;
 
@@ -23,20 +24,12 @@ export class PapElement extends HTMLElement {
     super();
 
     this.attachShadow(shadowRootInit);
-
-    this._papDom = {
-      attributes: {},
-      children: [],
-      events: {},
-      tagName: this.tagName,
-      text: null
-    };
     this.requestUpdate = debounceFn(this.update, shadowRootInit.requestUpdateTimeout ?? 50);
   }
 
   connectedCallback() {
     this._observer = this._setupMutationObserver();
-    
+
     this.update();
   }
 
@@ -49,19 +42,32 @@ export class PapElement extends HTMLElement {
   }
 
   update() {
-    console.log('RENDER')
     this.__internalUpdateCall = true;
     let info = this.render();
     if (typeof info === "string") info = html`${info}`;
 
-
+    if (!Object.hasOwn(this, "_papDom"))
+    {
+      this._papDom = {
+        attributes: {},
+        children: info.papDOM,
+        events: {},
+        tagName: this.tagName,
+        text: null
+      };
+      
+      this.root.innerHTML = "";
+      this.root.append(info.dom);
+      return;
+    }
+    
+    differ(this.papDOM, info);
+    this.__internalUpdateCall = false; // just now as we dont apply any changed 
     // // now we can process html (injecting events etc)
     // // info.
 
-    this._papDom.children = info.papDOM;
+    
 
-    this.root.innerHTML = "";
-    this.root.append(info.dom);
     // Array.from(info.dom.body.childNodes).forEach((child) => {
     //   this.root.appendChild(child);
     // });
@@ -78,14 +84,17 @@ export class PapElement extends HTMLElement {
 
   render():string|papHTML {
     return `
-      <div>hello</div>
+      <div>hello World</div>
     `
   }
 
-
   // mutation observer 
+  // WHEN DIFFING WE CAN ONLY LOOK FOR THE VALUES IN THE TEMPLATE LITERAL and then we 
+  // can update only those, so the html should have a init case or something where we can keep track of those 
   private _setupMutationObserver () {
     const observer = new MutationObserver((mutationList) => {
+      if (this.__internalUpdateCall) return;
+
       for (let mutation of mutationList)
       {
         this._handleMutation(mutation);
@@ -104,7 +113,6 @@ export class PapElement extends HTMLElement {
     return observer;
   }
   private _handleMutation(mutation: MutationRecord) {
-    if (this.__internalUpdateCall) return;
     console.log('DOM CHANGE', mutation);
   }
 }

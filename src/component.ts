@@ -34,8 +34,9 @@ export class NewCore extends PapElement {
   }
 
   render() {
+    console.log('render called', this.hello)
     return html`
-      HEJSAN
+      ${this.hello}
       <button @submit=${this.handlesubmit} onclick=${this.handleclick}>add</button>
       <ul>
         <button @reset=${this.handlesubmit} @click=${this.handleclick}>add 2</button>

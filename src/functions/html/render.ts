@@ -9,22 +9,8 @@ export function Render(strings: TemplateStringsArray, ...values: any[]):papHTML 
     let text = strings[i];
     let value = values[i] ?? "";
 
-    if (typeof value === "function")
-    {
-      // the function name is from the last text and up 
-      const attributeMatch = text.match(/(@|on)(?<name>[^\s]+)=$/);
-      if (attributeMatch == null)
-      {
-        throw new Error("[error] could not extract attribute-name");
-      }
-      
-      text = text.replace(attributeMatch[0], `data-pap-event-${i}="${i}"`);
-      events[String(i)] = [attributeMatch.groups?.name ?? attributeMatch[2], value];
+    
 
-      value = "";
-    }
-
-    htmlStrings.push(text + value);
   }
 
   const template = document.createElement("template");
@@ -39,7 +25,52 @@ export function Render(strings: TemplateStringsArray, ...values: any[]):papHTML 
   };
 }
 
-function compile(node: Node, events: Record<string, [string, Function]>): NodeInfo|null {
+type ValueType = {
+  value: string;
+  type: "event"|"array"|"fragment"|"string"|"object";
+}
+function valueBuilder(value:any, executed = 0):ValueType {
+  if (typeof value === "function")
+  {
+    // the function name is from the last text and up 
+    const attributeMatch = text.match(/(@|on)(?<name>[^\s]+)=$/);
+    if (attributeMatch == null)
+    {
+      if (executed >= 10)
+      {
+        throw new Error("[error html]: A function is being executed over and over again")
+      }
+      // a function that should be executed ? 
+      return valueBuilder(value(), executed + 1);
+    }
+    else 
+    {
+      text = text.replace(attributeMatch[0], `data-pap-event-${i}="${i}"`);
+      events[String(i)] = [attributeMatch.groups?.name ?? attributeMatch[2], value];
+
+      value = "";
+    }
+  }
+  else if (value instanceof Array)
+  {
+    // dealing with arrays 
+  }
+  else if (value instanceof DocumentFragment)
+  {
+    // dealing with fragments 
+  }
+  else if (value instanceof Object)
+  {
+    // dealing with objects 
+  }
+  else 
+  {
+    // strings 
+    htmlStrings.push(text + value);
+  }
+}
+
+function compile(node: Node, events: Record<string, [string, Function]>, path:string[] = [], index = 0): NodeInfo|null {
 
   if (node.nodeType === Node.TEXT_NODE) {
     if (node.textContent?.trim() === "") {
@@ -52,6 +83,7 @@ function compile(node: Node, events: Record<string, [string, Function]>): NodeIn
       events: {}, // TextNode doesn't have events
       children: [], // TextNode doesn't have children
       text: node.textContent, // Use the text content
+      // path: [...path, index]
     };
   }
 
