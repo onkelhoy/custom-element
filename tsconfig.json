@@ -24,7 +24,18 @@
     "declarationDir": "lib/types",
     "declaration": true,
     "incremental": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    "baseUrl": "src",
+    "paths": {
+      "@decorators/*": ["./decorators/*"],
+      "@html": ["./functions/html/index"],
+      "@html/*": ["./functions/html/*"],
+      "@element/*": ["./element/*"],
+      "@element": ["./element/index"],
+      "@shared/*": ["./shared/*"],
+      "@functions/*": ["./functions/*"],
+    }
   },
   "include": [
     "src/**/*.js",

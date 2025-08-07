@@ -1,11 +1,14 @@
-import { html, PapElement, papHTML } from "../html";
+import { html, type NodeInfo, type papHTML, } from "@html";
+import { Setting } from "./types";
+import { debounceFn } from "@functions/debounce";
 
-export class CustomElement extends HTMLElement {
+export class PapElement extends HTMLElement {
 
   static observedAttributes = [];
 
-  private _papDom: PapElement;
+  private _papDom: NodeInfo;
   private _observer!: MutationObserver;
+  private __internalUpdateCall = false;
 
   // getters 
   get papDOM() {
@@ -16,10 +19,11 @@ export class CustomElement extends HTMLElement {
     return this as HTMLElement;
   }
 
-  constructor(shadowRootInit: ShadowRootInit) {
+  constructor(shadowRootInit: ShadowRootInit & Partial<Setting>) {
     super();
 
     this.attachShadow(shadowRootInit);
+
     this._papDom = {
       attributes: {},
       children: [],
@@ -27,12 +31,13 @@ export class CustomElement extends HTMLElement {
       tagName: this.tagName,
       text: null
     };
+    this.requestUpdate = debounceFn(this.update, shadowRootInit.requestUpdateTimeout ?? 50);
   }
 
   connectedCallback() {
-    this.update();
-
     this._observer = this._setupMutationObserver();
+    
+    this.update();
   }
 
   disconnectedCallback() {
@@ -44,16 +49,25 @@ export class CustomElement extends HTMLElement {
   }
 
   update() {
+    console.log('RENDER')
+    this.__internalUpdateCall = true;
     let info = this.render();
     if (typeof info === "string") info = html`${info}`;
 
-    this._papDom = info.papDOM;
+
+    // // now we can process html (injecting events etc)
+    // // info.
+
+    this._papDom.children = info.papDOM;
 
     this.root.innerHTML = "";
-    Array.from(info.dom.body.childNodes).forEach((child) => {
-      this.root.appendChild(child);
-    });
+    this.root.append(info.dom);
+    // Array.from(info.dom.body.childNodes).forEach((child) => {
+    //   this.root.appendChild(child);
+    // });
   }
+
+  requestUpdate() {}
 
   querySelector<T extends Element>(selectors: string) {
     return this.root.querySelector<T>(selectors);
@@ -76,6 +90,8 @@ export class CustomElement extends HTMLElement {
       {
         this._handleMutation(mutation);
       } 
+
+      this.__internalUpdateCall = false;
     });
 
     observer.observe(this.root, {
@@ -88,6 +104,7 @@ export class CustomElement extends HTMLElement {
     return observer;
   }
   private _handleMutation(mutation: MutationRecord) {
+    if (this.__internalUpdateCall) return;
     console.log('DOM CHANGE', mutation);
   }
 }

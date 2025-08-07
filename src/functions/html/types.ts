@@ -1,12 +1,12 @@
-export type PapElement = {
+export type NodeInfo = {
   tagName: string;
   attributes: Record<string, string>;
   events: Record<string, Function>;
-  children: PapElement[];
+  children: NodeInfo[];
   text: string|null;
 }
 
 export type papHTML = {
-  dom: Document;
-  papDOM: PapElement[];
+  dom: DocumentFragment;
+  papDOM: NodeInfo[];
 }
