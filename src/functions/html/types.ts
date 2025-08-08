@@ -2,4 +2,5 @@
 export interface Part {
   apply(value: any, oldValue: any): void;
   clear(): void;
+  compare(value: any, oldValue: any): boolean;
 }

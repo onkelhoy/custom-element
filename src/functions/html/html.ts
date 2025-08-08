@@ -1,5 +1,5 @@
-import { AttributePart, CommentPart, EventPart } from "./parts";
-import { Part } from "./types";
+// import { AttributePart, CommentPart, EventPart } from "./parts";
+// import { Part } from "./types";
 
 
 // Metadata map to associate root elements with their dynamic values

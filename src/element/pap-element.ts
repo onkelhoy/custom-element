@@ -1,18 +1,18 @@
 import { html } from "@html";
-import { Meta, Setting } from "./types";
+import { Setting } from "./types";
 import { debounceFn } from "@functions/debounce";
 import { getValues } from "@html/html";
-import { getParts } from "@html/parts";
+import { getParts, TemplateInstance } from "@html/parts";
 // import { getMetadata } from "@html/html";
 
 export class PapElement extends HTMLElement {
 
   static observedAttributes = [];
 
-  private meta: Meta|null = null;
+  private templateInstance: TemplateInstance|null = null;
 
   get root () {
-    if (this.meta?.element) return this.meta.element;
+    if (this.templateInstance?.element) return this.templateInstance.element;
     if (this.shadowRoot) return this.shadowRoot;
     return this as HTMLElement;
   }
@@ -47,34 +47,46 @@ export class PapElement extends HTMLElement {
 
     const newValues = getValues(newRoot);
 
-    if (this.meta == null)
+    if (this.templateInstance == null)
     {
       this.root.append(newRoot);
-      this.meta = {
-        element: newRoot,
-        parts: getParts(newRoot),
-        values: [], // important so inital values can be assigned 
-      }
-
+      this.templateInstance = new TemplateInstance(newRoot);
       this.firstRender();
-      // meta.update(meta.lastValues, true);
     }
-    
-    if (!newValues) return void console.error("[error] values could not be found")
-
-    for (let i=0; i<newValues?.length; i++)
+    else 
     {
-      const newValue = newValues[i];
-      const oldValue = this.meta.values[i];
-
-      console.log('newvalue', newValue)
-
-      if (newValue !== oldValue)
-      {
-        this.meta.values[i] = newValue;
-        this.meta.parts[i].apply(newValue, oldValue);
-      }
+      if (!newValues) return void console.error("[error] values could not be found")
+        
+      this.templateInstance.update(newValues);
     }
+
+    // if (!this.meta) {
+    //   const el = newRoot.template.cloneNode(true) as Element;
+    //   this.meta = new TemplateInstance(el, newRoot.values);
+    //   this.root.append(el);
+    // } else {
+    //   this.meta.update(newRoot.values);
+    // }
+    
+    // if (!newValues) return void console.error("[error] values could not be found")
+    
+    // const max = Math.max(this.meta.values.length, newValues.length); // should only take newValues.length ? 
+    // for (let i=0; i<max; i++)
+    // {
+    //   const newValue = newValues[i];
+    //   if (newValue === undefined)
+    //   {
+    //     console.warn("[warning] core: new-value is undefined, should get looked into", this.meta, newValues); 
+    //   }
+
+    //   const oldValue = this.meta.values[i];
+
+    //   if (!this.meta.parts[i].compare(newValue, oldValue))
+    //   {
+    //     this.meta.values[i] = newValue;
+    //     this.meta.parts[i].apply(newValue, oldValue);
+    //   }
+    // }
   }
 
   requestUpdate() {}

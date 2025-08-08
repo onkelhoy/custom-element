@@ -2,56 +2,56 @@ import { PapElement } from "@element";
 import { html } from "@html";
 import { bind } from "@decorators/bind";
 import { property } from "./decorators/property";
-import { debounce } from "@decorators/debounce";
 
 export class NewCore extends PapElement {
 
-  // @property({ default: "hello" })
+  @property({
+    type: Boolean,
+    rerender: true,
+  })
+  private show = false;
+
+
   @property({
     type: Number,
     rerender: true,
   })
-  count = 0;
+  private count = 0;
 
   constructor() {
     super({ mode: 'open' });
   }
 
   @bind
+  private handleshow () {
+    this.show = true;
+  }
+  @bind
+  private handlehide() {
+    this.show = false;
+  }
+
+  @bind
   private handleinc () {
     this.count++;
   }
-
   @bind
   private handledec() {
     this.count--;
   }
 
-  @bind
-  private renderArray() {
-    const arr = new Array(this.count).fill(0).map((_, index) => html`<li>${index}</li>`);
-    console.log('render array', arr);
-    return arr;
-  }
-
   render() {
-    // console.log('render called', this.hello)
-    // const a = RenderAlt('bajs')`<p hello=${this.hello}>hello</p>`;
-    // console.log('A', a)
 
-    const elm = html`
+    return html`
+      <h3>show: ${this.show}</h3>
+      <button onclick=${this.handleshow}>show</button>
+      <button onclick=${this.handlehide}>hide</button>
+
+      <h3>count: ${this.count}</h3>
       <button onclick=${this.handleinc}>inc</button>
       <button onclick=${this.handledec}>dec</button>
 
-      ${this.count < 5 ? html`<p>bajs ${this.count}</p>` : null}
-      <p>count: ${this.count}</p>
-
-        <ul>
-          <li>fkrst</li>
-          ${this.renderArray()}
-        </ul>
+      ${this.show ? html`<h1>IM ${this.count}</h1>` : null}      
     `;
-
-    return elm;
   }
 }
