@@ -2,8 +2,7 @@ import { html } from "@html";
 import { Setting } from "./types";
 import { debounceFn } from "@functions/debounce";
 import { getValues } from "@html/html";
-import { getParts, TemplateInstance } from "@html/parts";
-// import { getMetadata } from "@html/html";
+import { TemplateInstance } from "@html/parts";
 
 export class PapElement extends HTMLElement {
 
@@ -42,9 +41,6 @@ export class PapElement extends HTMLElement {
 
     if (!newRoot) throw new Error("[error] core: no element returned from render");
 
-    // const meta = getMetadata(newRoot);
-    // if (!meta) throw new Error("[html] metadata could not be found");
-
     const newValues = getValues(newRoot);
 
     if (this.templateInstance == null)
@@ -56,37 +52,9 @@ export class PapElement extends HTMLElement {
     else 
     {
       if (!newValues) return void console.error("[error] values could not be found")
-        
+
       this.templateInstance.update(newValues);
     }
-
-    // if (!this.meta) {
-    //   const el = newRoot.template.cloneNode(true) as Element;
-    //   this.meta = new TemplateInstance(el, newRoot.values);
-    //   this.root.append(el);
-    // } else {
-    //   this.meta.update(newRoot.values);
-    // }
-    
-    // if (!newValues) return void console.error("[error] values could not be found")
-    
-    // const max = Math.max(this.meta.values.length, newValues.length); // should only take newValues.length ? 
-    // for (let i=0; i<max; i++)
-    // {
-    //   const newValue = newValues[i];
-    //   if (newValue === undefined)
-    //   {
-    //     console.warn("[warning] core: new-value is undefined, should get looked into", this.meta, newValues); 
-    //   }
-
-    //   const oldValue = this.meta.values[i];
-
-    //   if (!this.meta.parts[i].compare(newValue, oldValue))
-    //   {
-    //     this.meta.values[i] = newValue;
-    //     this.meta.parts[i].apply(newValue, oldValue);
-    //   }
-    // }
   }
 
   requestUpdate() {}
