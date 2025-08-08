@@ -1,16 +1,18 @@
 import { html } from "@html";
-import { Setting } from "./types";
+import { Meta, Setting } from "./types";
 import { debounceFn } from "@functions/debounce";
-import { getMetadata } from "@html/html";
-// import { differ } from "@html/_differ";
+import { getValues } from "@html/html";
+import { getParts } from "@html/parts";
+// import { getMetadata } from "@html/html";
 
 export class PapElement extends HTMLElement {
 
   static observedAttributes = [];
 
-  private _initialised = false;
+  private meta: Meta|null = null;
 
   get root () {
+    if (this.meta?.element) return this.meta.element;
     if (this.shadowRoot) return this.shadowRoot;
     return this as HTMLElement;
   }
@@ -35,47 +37,44 @@ export class PapElement extends HTMLElement {
   firstRender() {}
 
   update() {
-    let element = this.render();
-    if (typeof element === "string") element = html`${element}`;
+    let newRoot = this.render();
+    if (typeof newRoot === "string") newRoot = html`${newRoot}`;
 
-    if (!this._initialised)
+    if (!newRoot) throw new Error("[error] core: no element returned from render");
+
+    // const meta = getMetadata(newRoot);
+    // if (!meta) throw new Error("[html] metadata could not be found");
+
+    const newValues = getValues(newRoot);
+
+    if (this.meta == null)
     {
-      this.root.append(element);
-      const meta = getMetadata(element);
-      if (!meta) throw new Error("[html] metadata could not be found");
-
-      // HERE IS THE FOCUS FOR NOW 
-      meta.update(meta.lastValues, true);
+      this.root.append(newRoot);
+      this.meta = {
+        element: newRoot,
+        parts: getParts(newRoot),
+        values: [], // important so inital values can be assigned 
+      }
 
       this.firstRender();
-      this._initialised = true;
+      // meta.update(meta.lastValues, true);
     }
-
-    // if (!Object.hasOwn(this, "_papDom"))
-    // {
-    //   this._papDom = {
-    //     attributes: {},
-    //     children: info.papDOM,
-    //     events: {},
-    //     tagName: this.tagName,
-    //     text: null
-    //   };
-      
-    //   this.root.innerHTML = "";
-    //   this.root.append(info.dom);
-    //   return;
-    // }
     
-    // differ(this.papDOM, info);
-    // this.__internalUpdateCall = false; // just now as we dont apply any changed 
-    // // now we can process html (injecting events etc)
-    // // info.
+    if (!newValues) return void console.error("[error] values could not be found")
 
-    
+    for (let i=0; i<newValues?.length; i++)
+    {
+      const newValue = newValues[i];
+      const oldValue = this.meta.values[i];
 
-    // Array.from(info.dom.body.childNodes).forEach((child) => {
-    //   this.root.appendChild(child);
-    // });
+      console.log('newvalue', newValue)
+
+      if (newValue !== oldValue)
+      {
+        this.meta.values[i] = newValue;
+        this.meta.parts[i].apply(newValue, oldValue);
+      }
+    }
   }
 
   requestUpdate() {}
@@ -92,32 +91,4 @@ export class PapElement extends HTMLElement {
       <div>hello World</div>
     `
   }
-
-  // mutation observer 
-  // WHEN DIFFING WE CAN ONLY LOOK FOR THE VALUES IN THE TEMPLATE LITERAL and then we 
-  // can update only those, so the html should have a init case or something where we can keep track of those 
-  // private _setupMutationObserver () {
-  //   const observer = new MutationObserver((mutationList) => {
-  //     if (this.__internalUpdateCall) return;
-
-  //     for (let mutation of mutationList)
-  //     {
-  //       this._handleMutation(mutation);
-  //     } 
-
-  //     this.__internalUpdateCall = false;
-  //   });
-
-  //   observer.observe(this.root, {
-  //     attributes: true,
-  //     subtree: true,
-  //     childList: true,
-  //     characterData: true,
-  //   });
-
-  //   return observer;
-  // }
-  // private _handleMutation(mutation: MutationRecord) {
-  //   console.log('DOM CHANGE', mutation);
-  // }
 }

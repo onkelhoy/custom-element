@@ -1,171 +1,148 @@
 import { AttributePart, CommentPart, EventPart } from "./parts";
-import { Metadata, Part } from "./types";
+import { Part } from "./types";
 
-// Cache for compiled templates
-const templateCache = new WeakMap<TemplateStringsArray, HTMLTemplateElement>();
 
-// Metadata map holding info per rendered root node
-const metadataMap = new WeakMap<Element | DocumentFragment, Metadata>();
+// Metadata map to associate root elements with their dynamic values
+// Used to store the latest set of values applied to a rendered template
+const metadataMap = new WeakMap<Element, any[]>();
 
-// The `html` tagged template function
-export function html(strings: TemplateStringsArray, ...values: any[]): Element {
-  // 1. Compile or get cached template
-  const template = getOrCompileTemplate(strings);
+// Cache storing compiled root elements per unique template literal strings array
+// Prevents re-parsing and re-creating DOM for the same template literal strings
+const cachedElements = new WeakMap<TemplateStringsArray, Element>();
 
-  // 2. Clone DOM from template content
-  const fragment = template.content.cloneNode(true) as DocumentFragment;
+/**
+ * The main `html` tagged template function.
+ * Accepts a template literal strings array and values,
+ * compiles or retrieves cached root element,
+ * and stores the dynamic values metadata.
+ * 
+ * @param templateStringArray Template literal strings array (the static parts of the template)
+ * @param values Dynamic values passed into the template literal
+ * @returns Root Element representing the compiled template DOM
+ */
+export function html(templateStringArray: TemplateStringsArray, ...values: unknown[]): Element {
+  // Compile or get cached DOM for this template string array
+  const root = compile(templateStringArray);
 
-  // 3. Determine root element (first element child or the fragment itself)
-  // const root: Element | DocumentFragment = fragment.firstElementChild ?? fragment;
-  const root = normalizeRoot(fragment);
+  // Store the dynamic values associated with this root element
+  metadataMap.set(root, values);
 
-  // 4. Find dynamic parts and create update logic
-  const parts: Part[] = findParts(root, values);
-
-  // 5. Save metadata externally in WeakMap
-  metadataMap.set(root, {
-    parts,
-    lastValues: values,
-    update(newValues: any[], initial = false) {
-      for (let i = 0; i < parts.length; i++) {
-        if (initial || this.lastValues[i] !== newValues[i]) {
-          parts[i].apply(newValues[i], this.lastValues[i]);
-          this.lastValues[i] = newValues[i];
-        }
-      }
-    },
-  });
-
-  // 6. Return the actual HTMLElement or DocumentFragment
   return root;
 }
 
-export function getMetadata(element: Element): Metadata | undefined {
-  return metadataMap.get(element);
-}
-
-// helper functions 
-function normalizeRoot(fragment: DocumentFragment): Element {
-  function isEmptyTextNode(node: Node): boolean {
-    return (
-      node.nodeType === Node.TEXT_NODE &&
-      !/\S/.test(node.textContent || '')
-    );
+/**
+ * Compiles the template strings array into a root Element.
+ * Caches the resulting Element for future calls with the same template.
+ * 
+ * @param templateStringArray The template literal strings array
+ * @returns Root Element of the compiled template
+ */
+function compile(templateStringArray: TemplateStringsArray): Element {
+  // Return cached root element if it exists
+  if (cachedElements.has(templateStringArray)) {
+    return cachedElements.get(templateStringArray)!;
   }
 
-  // Filter out all empty text nodes among direct children
-  const filteredChildren = Array.from(fragment.childNodes).filter(
-    (node) => !isEmptyTextNode(node)
-  );
+  // Create a <template> element for safe HTML parsing
+  const template = document.createElement('template');
 
-  if (filteredChildren.length === 0) {
-    // If all children were empty, return empty div
-    return document.createElement('div');
-  } else if (filteredChildren.length === 1) {
-    const single = filteredChildren[0];
-    // Return Element or TextNode as-is
-    if (single.nodeType === Node.ELEMENT_NODE) {
-      return single as Element;
-    } else {
-      // Other node types? Wrap in div to be safe
-      const wrapper = document.createElement('div');
-      wrapper.appendChild(single);
-      return wrapper;
-    }
-  } else {
-    // Multiple nodes — wrap in div container
-    const wrapper = document.createElement('div');
-    filteredChildren.forEach((node) => wrapper.appendChild(node));
-    return wrapper;
-  }
-}
-
-
-// making sure template-string-array is propperly with quotes
-function fixTemplateStringArray(templateStringArray: TemplateStringsArray): string[] {
+  // This flag helps fix attribute quoting issues by adding quotes where needed
   let expectQuote = false;
 
-  return templateStringArray.map((str) => {
+  // Join template strings inserting comment markers to mark dynamic parts
+  template.innerHTML = templateStringArray.map((str) => {
     let fixedStr = str;
 
+    // If last string ended with '=', ensure next string starts with '"'
     if (expectQuote) {
       if (!fixedStr.startsWith('"')) fixedStr = '"' + fixedStr;
       expectQuote = false;
     }
 
+    // If current string ends with '=', prepare to add opening quote next time
     if (fixedStr.endsWith('=')) {
-      fixedStr += '"'
+      fixedStr += '"';
       expectQuote = true;
     }
 
     return fixedStr;
-  });
+  }).join('<!--marker-->');
+
+  // Clone content from the template element to create a DocumentFragment
+  const fragment = template.content.cloneNode(true) as DocumentFragment;
+
+  // Normalize the fragment into a root Element (unwraps single node or wraps multiple in a div)
+  const root = normalizeRoot(fragment);
+
+  (root as any).__isTemplateRoot = true;
+
+  // Cache the compiled root element for reuse
+  cachedElements.set(templateStringArray, root);
+
+  return root;
 }
 
-// Get or compile the template for a given strings array
-function getOrCompileTemplate(strings: TemplateStringsArray): HTMLTemplateElement {
-  if (templateCache.has(strings)) {
-    return templateCache.get(strings)!; // Non-null assertion since we checked
-  }
-
-  // Create a new template element
-  const template = document.createElement('template');
-
-  // Insert markers for dynamic parts — for simplicity, join with a marker
-  template.innerHTML = fixTemplateStringArray(strings).join('<!--marker-->');
-
-  // Cache the compiled template
-  templateCache.set(strings, template);
-
-  return template;
+/**
+ * Retrieves the stored dynamic values metadata associated with a root element.
+ * 
+ * @param element Root element created by `html` function
+ * @returns Array of dynamic values or undefined if none stored
+ */
+export function getValues(element: Element) {
+  return metadataMap.get(element);
 }
 
-// Dummy example: findParts implementation returning empty parts for now
-function findParts(root: Element, values: any[]): Part[] {
-  const walker = document.createTreeWalker(
-    root,
-    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT
+/**
+ * Checks if a text node is empty or contains only whitespace.
+ * 
+ * @param node The node to check
+ * @returns True if the node is a text node and empty/whitespace only
+ */
+function isEmptyTextNode(node: Node): boolean {
+  return (
+    node.nodeType === Node.TEXT_NODE &&
+    !/\S/.test(node.textContent || '')
+  );
+}
+
+/**
+ * Normalizes a DocumentFragment into a single root Element.
+ * - If no children or only empty text nodes: returns an empty <div>
+ * - If exactly one child node:
+ *    - If element node, returns it directly
+ *    - Otherwise wraps it in a <div>
+ * - If multiple child nodes, wraps them in a <div>
+ * 
+ * This ensures the template always returns an Element as root.
+ * 
+ * @param fragment DocumentFragment containing template content
+ * @returns Root Element for the template
+ */
+function normalizeRoot(fragment: DocumentFragment): Element {
+  // Filter out empty text nodes among direct children
+  const filteredChildren = Array.from(fragment.childNodes).filter(
+    (node) => !isEmptyTextNode(node)
   );
 
-  const parts: Part[] = [];
-  let node = walker.nextNode();
-  let valueIndex = 0;
-
-  while (node) {
-    if (node.nodeType === Node.COMMENT_NODE) {
-      if (node.nodeValue === 'marker') {
-        parts.push(new CommentPart(node));
-        valueIndex++;
-      }
-    } 
-    else if (node.nodeType === Node.ELEMENT_NODE) {
-
-      const element = node as Element;
-      for (let i=0; i<element.attributes.length; i++) {
-        const attribute = element.attributes[i];
-        if (attribute.value !== "<!--marker-->") continue;
-
-        const eventMatch = attribute.name.match(/(on|@)(?<name>[^\s]+)/);
-        if (eventMatch)
-        {
-          i--;
-          element.removeAttribute(attribute.name);
-          parts.push(new EventPart(element, eventMatch.groups?.name ?? eventMatch[2] ?? attribute.name));
-        }
-        else 
-        {
-          parts.push(new AttributePart(element, attribute.name));
-        }
-
-        valueIndex++;
-      }
-    }
-    else 
-    {
-      console.warn('[html] unknown node-type', node.nodeType, node)
-    }
-    node = walker.nextNode();
+  if (filteredChildren.length === 0) {
+    // No non-empty children - return empty div as fallback
+    return document.createElement('div');
   }
-
-  return parts;
+  
+  if (filteredChildren.length === 1) {
+    const single = filteredChildren[0];
+    // If single child is an element, return it directly
+    if (single.nodeType === Node.ELEMENT_NODE) return single as Element;
+    
+    // Otherwise, wrap it in a div to ensure an Element is returned
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(single);
+    return wrapper;
+  }
+  
+  // Multiple children - wrap all in a div container
+  const wrapper = document.createElement('div');
+  filteredChildren.forEach((node) => wrapper.appendChild(node));
+  return wrapper;
 }
+

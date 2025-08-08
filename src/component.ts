@@ -3,35 +3,35 @@ import { html } from "@html";
 import { bind } from "@decorators/bind";
 import { property } from "./decorators/property";
 import { debounce } from "@decorators/debounce";
-// import { RenderAlt } from "@html/render";
 
 export class NewCore extends PapElement {
 
-
   // @property({ default: "hello" })
   @property({
-    after: console.log,
+    type: Number,
     rerender: true,
-    get: (value) => {
-      return value + "HAAH"
-    }
   })
-  hello = "bajs";
+  count = 0;
 
   constructor() {
     super({ mode: 'open' });
   }
 
   @bind
-  @debounce
-  private handleclick () {
-    this.hello = "najjaj"
-    console.log('im clicked', this.hello);
+  private handleinc () {
+    this.count++;
   }
 
   @bind
-  private handlesubmit() {
-    console.log('im submitted');
+  private handledec() {
+    this.count--;
+  }
+
+  @bind
+  private renderArray() {
+    const arr = new Array(this.count).fill(0).map((_, index) => html`<li>${index}</li>`);
+    console.log('render array', arr);
+    return arr;
   }
 
   render() {
@@ -40,19 +40,18 @@ export class NewCore extends PapElement {
     // console.log('A', a)
 
     const elm = html`
-      ${this.hello}
-      <button @submit=${this.handlesubmit} onclick=${this.handleclick}>add</button>
-      <ul>
-        <button @reset=${this.handlesubmit} @click=${this.handleclick}>add 2</button>
-          UUUUU WOWO 
-      </ul>
-      <p>hello</p>
-      <div>
-        <h1 hello=${this.hello}>EMTUUU</h1>
-      </div>
+      <button onclick=${this.handleinc}>inc</button>
+      <button onclick=${this.handledec}>dec</button>
+
+      ${this.count < 5 ? html`<p>bajs ${this.count}</p>` : null}
+      <p>count: ${this.count}</p>
+
+        <ul>
+          <li>fkrst</li>
+          ${this.renderArray()}
+        </ul>
     `;
 
-    console.log('elm', elm);
     return elm;
   }
 }
