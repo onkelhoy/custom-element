@@ -78,8 +78,6 @@ export class TemplateInstance {
     this.parts = getParts(element);
     this.values = new Array(this.parts.length);
     this.update(values);
-
-    console.log('PARTS', this.parts, element, values);
   }
 
   update(newValues: any[]) {

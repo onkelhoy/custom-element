@@ -1,19 +1,18 @@
 import { debounceFn, STANDARD_DELAY } from "@functions/debounce";
 import { Options } from "./types";
 
-
-export function Decorator(): MethodDecorator;
-export function Decorator(delay: number): MethodDecorator;
-export function Decorator(name: string): MethodDecorator;
-export function Decorator(options: Partial<Options>): MethodDecorator;
-export function Decorator(
+export function debounce(): MethodDecorator;
+export function debounce(delay: number): MethodDecorator;
+export function debounce(name: string): MethodDecorator;
+export function debounce(options: Partial<Options>): MethodDecorator;
+export function debounce(
   target: any,
-  propertyKey: string | symbol,
+  propertyKey: PropertyKey,
   descriptor: PropertyDescriptor
 ): void;
-export function Decorator(
+export function debounce(
   ...args:
-    | [any, string | symbol, PropertyDescriptor]
+    | [any, PropertyKey, PropertyDescriptor]
     | [number | string | Partial<Options>]
 ): MethodDecorator | void {
 
@@ -29,7 +28,7 @@ export function Decorator(
 
   return function (
     target: any,
-    key: string | symbol,
+    key: PropertyKey,
     descriptor: PropertyDescriptor
   ): void {
     applyDebounce(opts, target, key, descriptor);
@@ -46,7 +45,7 @@ function normalizeArgs(arg: any): Options {
 function applyDebounce(
   options: Options,
   target: any,
-  key: string | symbol,
+  key: PropertyKey,
   descriptor: PropertyDescriptor
 ) {
   const original = descriptor.value;

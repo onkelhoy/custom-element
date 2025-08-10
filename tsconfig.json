@@ -25,6 +25,8 @@
     "declaration": true,
     "incremental": true,
     "resolveJsonModule": true,
+    "useDefineForClassFields": false,
+    "emitDecoratorMetadata": true,
 
     "baseUrl": "src",
     "paths": {
@@ -33,14 +35,13 @@
       "@html/*": ["./functions/html/*"],
       "@element/*": ["./element/*"],
       "@element": ["./element/index"],
-      "@shared/*": ["./shared/*"],
       "@functions/*": ["./functions/*"],
+      "@papit/core": ["./index"],
     }
   },
   "include": [
-    "src/**/*.js",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts"
+    "src",
+    "views",
+    "tests"
   ]
 }

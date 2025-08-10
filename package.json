@@ -1,5 +1,5 @@
 {
-  "name": "@papit/new-core",
+  "name": "@papit/core",
   "description": "",
   "version": "0.0.0",
   "scripts": {
@@ -24,8 +24,14 @@
     "lib/"
   ],
   "exports": {
-    "./react": "./lib/react/index.js",
-    ".": "./lib/bundle.js"
+    "./react": {
+      "import":  "./lib/react/index.js",
+      "types": "./lib/types/index.d.ts"
+    },
+    ".": {
+      "import": "./lib/bundle.js",
+      "types": "./lib/types/index.d.ts"
+    }
   },
   "author": "Henry",
   "private": false,
@@ -39,10 +45,10 @@
     "url": "https://github.com/onkelhoy/web-components.git"
   },
   "dependencies": {
-    "@papit/server": "^0.0.26",
     "tslib": "^2.5.0"
   },
   "devDependencies": {
+    "@papit/server": "^0.0.26",
     "@playwright/test": "^1.45.3",
     "@types/node": "^22.10.2",
     "chokidar": "^3.6.0",

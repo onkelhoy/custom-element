@@ -2,7 +2,7 @@
 
 # variables
 package=$(pwd)
-view=${1:-new-core}
+view=${1:-basic}
 
 for arg in "$@"; do
   if [[ $arg == --view=* ]]; then 

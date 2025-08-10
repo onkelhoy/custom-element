@@ -1,0 +1,82 @@
+import { CustomElement, html, bind, property, query } from "@papit/core";
+
+export class Basic extends CustomElement {
+
+  @property({
+    type: Boolean,
+    rerender: true,
+
+  })
+  private show = false;
+
+
+  @property({
+    type: Number,
+    rerender: true,
+    attribute: "counter",
+  })
+  private count = 0;
+
+  @query<HTMLSpanElement>({
+    load(this: Basic, elm) {
+      console.log('hej:', elm, this)
+    },
+    selector: "span"
+  }) hej!: HTMLSpanElement;
+
+
+  @query<HTMLSpanElement>({
+    load(this: Basic, elm) {
+      console.log('hejsan:', elm, this)
+    },
+    selector: "span"
+  }) hejsan!: HTMLSpanElement;
+
+  @bind
+  private handleshow () {
+    this.show = true;
+  }
+  
+  @bind
+  private handlehide() {
+    this.show = false;
+  }
+
+  @bind
+  private handleinc () {
+    this.count++;
+    console.log(this.hej);
+  }
+
+  @bind
+  private handledec() {
+    this.count--;
+  }
+
+  render() {
+
+    return html`
+      <span>WOW</span>
+      <h3>show: ${this.show}</h3>
+      <button onclick=${this.handleshow}>show</button>
+      <button onclick=${this.handlehide}>hide</button>
+
+      <h3>count: ${this.count}</h3>
+      <button onclick=${this.handleinc}>inc</button>
+      <button onclick=${this.handledec}>dec</button>
+
+      ${this.show ? html`<h1>IM ${this.count}</h1>` : null}      
+    `;
+  }
+}
+
+// Register the element with the browser
+const cElements = customElements ?? window?.customElements;
+
+if (!cElements) {
+  throw new Error('Custom Elements not supported');
+}
+
+if (!cElements.get('pap-core-basic')) {
+  cElements.define('pap-core-basic', Basic);
+}

@@ -1,5 +1,5 @@
 export {
-  Decorator as debounce,
+  debounce,
 } from "./decorator";
 
 export {

@@ -1,3 +1,3 @@
 export {
-  Decorator as bind,
+  bind,
 } from "./decorator";

@@ -1,14 +1,8 @@
-import { PapElement } from "@element";
-import { html } from "@html";
-import { bind } from "@decorators/bind";
-import { property } from "./decorators/property";
+import { CustomElement, html, bind, property } from "@papit/core";
 
-export class NewCore extends PapElement {
+export class Basic extends CustomElement {
 
-  @property({
-    type: Boolean,
-    rerender: true,
-  })
+  @property
   private show = false;
 
 
@@ -16,7 +10,7 @@ export class NewCore extends PapElement {
     type: Number,
     rerender: true,
   })
-  private count = 0;
+  count = 0;
 
   constructor() {
     super({ mode: 'open' });
@@ -26,6 +20,7 @@ export class NewCore extends PapElement {
   private handleshow () {
     this.show = true;
   }
+  
   @bind
   private handlehide() {
     this.show = false;
@@ -35,6 +30,7 @@ export class NewCore extends PapElement {
   private handleinc () {
     this.count++;
   }
+
   @bind
   private handledec() {
     this.count--;

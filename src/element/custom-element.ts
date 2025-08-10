@@ -1,14 +1,16 @@
 import { html } from "@html";
-import { Setting } from "./types";
 import { debounceFn } from "@functions/debounce";
 import { getValues } from "@html/html";
 import { TemplateInstance } from "@html/parts";
+import { PropertyMeta, QueryMeta, Setting } from "./types";
 
-export class PapElement extends HTMLElement {
+const defaultSetting: ShadowRootInit & Partial<Setting> = {
+  mode: "open",
+}
+
+export class CustomElement extends HTMLElement {
 
   static observedAttributes = [];
-
-  private templateInstance: TemplateInstance|null = null;
 
   get root () {
     if (this.templateInstance?.element) return this.templateInstance.element;
@@ -16,11 +18,15 @@ export class PapElement extends HTMLElement {
     return this as HTMLElement;
   }
 
-  constructor(shadowRootInit: ShadowRootInit & Partial<Setting>) {
+  constructor(shadowRootInit?: ShadowRootInit & Partial<Setting>) {
     super();
+    const settings = {
+      ...defaultSetting,
+      ...(shadowRootInit ?? {})
+    }
 
-    this.attachShadow(shadowRootInit);
-    this.requestUpdate = debounceFn(this.update, shadowRootInit.requestUpdateTimeout ?? 50);
+    this.attachShadow(settings);
+    this.requestUpdate = debounceFn(this.update, settings.requestUpdateTimeout ?? 50);
   }
 
   connectedCallback() {
@@ -30,7 +36,10 @@ export class PapElement extends HTMLElement {
   disconnectedCallback() {}
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
-    console.log('attribute has changed', name, oldValue, newValue);
+    if (!this.propertyMeta) return;
+    
+    const update = this.propertyMeta.get(name);
+    if (update) update.call(this, newValue, oldValue);
   }
 
   firstRender() {}
@@ -48,6 +57,7 @@ export class PapElement extends HTMLElement {
       this.root.append(newRoot);
       this.templateInstance = new TemplateInstance(newRoot);
       this.firstRender();
+      this.dispatchEvent(new Event("first-render"));
     }
     else 
     {
@@ -55,6 +65,8 @@ export class PapElement extends HTMLElement {
 
       this.templateInstance.update(newValues);
     }
+
+    this.findQueries();
   }
 
   requestUpdate() {}
@@ -71,4 +83,23 @@ export class PapElement extends HTMLElement {
       <div>hello World</div>
     `
   }
+
+  // helper variables & private functions 
+  private templateInstance: TemplateInstance|null = null;
+
+  // decorator query 
+  private queryMeta?: QueryMeta[];
+  private findQueries() {
+    if (!this.queryMeta) return;
+    for (let meta of this.queryMeta)
+    {
+      if ((this as any)[meta.propertyKey]) continue;
+      const elm = this.root.querySelector(meta.selector);
+      if (meta.load) meta.load(elm);
+      (this as any)[meta.propertyKey] = elm;
+    }
+  } 
+
+  // decorator property 
+  private propertyMeta?: PropertyMeta;
 }

@@ -1,5 +1,5 @@
 export {
-  Decorator as property,
+  property,
 } from "./decorator";
 
 export {

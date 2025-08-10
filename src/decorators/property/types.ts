@@ -80,6 +80,12 @@ export type Setting<T = any> = {
   noAccessor: boolean;
 
   /**
+   * maxReqursiveSteps is for values that is deeply nested objects|arrays 
+   * Use this to increase the default (20) reqursive steps a value will try before throwing an error
+   */
+  maxReqursiveSteps: number;
+
+  /**
    * Lifecycle hook triggered when the property changes.
    * Receives the new and previous values.
    */

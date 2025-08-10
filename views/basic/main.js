@@ -1,7 +1,7 @@
 // core
 
 // component
-import '@papit/new-core';
+import './component';
 
 window.onload = () => {
   console.log('[demo]: window loaded');

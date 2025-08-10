@@ -1,5 +1,5 @@
 // export 
-export * from "./pap-element.js";
+export * from "./custom-element.js";
 export {
-  Setting as PapElementSetting
+  Setting as ElementSetting
 } from "./types";

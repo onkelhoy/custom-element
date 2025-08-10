@@ -62,7 +62,7 @@ elif [[ "$PROD" == true ]]; then
   tsc --emitDeclarationOnly -p tsconfig.prod.json
 
   # esbuild part
-  esbuild --format=esm "./src/index.ts" --bundle --minify --allow-overwrite --outfile="./lib/bundle.js" --tsconfig=tsconfig.prod.json --external:$DEPENDENCIES
+  esbuild --format=esm "./src/index.ts" --bundle --minify --allow-overwrite --outfile="./lib/bundle.js" --tsconfig=tsconfig.prod.json --keep-names --external:$DEPENDENCIES
 fi
 
 if [[ -f "./react/declerations.d.ts" ]] && [[ -d "./lib/react/" ]]; then 
