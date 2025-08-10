@@ -1,5 +1,6 @@
 import { CustomElement, html, bind, property, query } from "@papit/core";
 
+const arr = ["henry", "simon", "layhe", "julian", "rick", "bubbles"];
 export class Basic extends CustomElement {
 
   @property({
@@ -16,6 +17,12 @@ export class Basic extends CustomElement {
     attribute: "counter",
   })
   private count = 0;
+
+
+  @property({
+    rerender: true,
+  })
+  private name = "henry";
 
   @query<HTMLSpanElement>({
     load(this: Basic, elm) {
@@ -45,12 +52,17 @@ export class Basic extends CustomElement {
   @bind
   private handleinc () {
     this.count++;
+
+    this.name = arr[this.count % arr.length];
     // console.log(this.hej);
   }
 
   @bind
   private handledec() {
     this.count--;
+
+    this.name = arr[this.count % arr.length];
+
   }
 
   render() {
@@ -68,17 +80,16 @@ export class Basic extends CustomElement {
       <button onclick=${this.handleinc}>inc</button>
       <button onclick=${this.handledec}>dec</button>
 
-
       ${this.show ? html`
         <h1>IM ${this.count}</h1>
         <ul>
           <li>Array with keys</li>
-          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key=${i}>item: ${i}</li>`)}
+          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key=${i}>item: ${i} ${i === 5 ? html`<strong>FIVE ${this.name}</strong>` : null}</li>`)}
         </ul>
 
         <ul>
           <li>Array without keys</li>
-          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i}</li>`)}
+          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i} ${i === 5 ? html`<strong>FIVE ${this.name}</strong>` : null}</li>`)}
         </ul>
       ` : null}
     `;

@@ -188,7 +188,10 @@ function sameValue(a:any, b:any, maxReqursiveSteps = 20, reqursiveSteps = 0) {
       return true;
     }
     default:
-      console.warn("[decorator]: unsopprted type detected", typeof a);
-      return true;
+      if (a !== undefined)
+      {
+        console.warn("[decorator]: unsopprted type detected", typeof a, typeof b, a, b);
+      }
+      return a === b;
   }
 }

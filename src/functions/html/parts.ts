@@ -1,72 +1,77 @@
 import { getValues } from "./html";
 import { Part } from "./types";
 
-
 /**
- * Traverses the template root element to find all dynamic parts:
- * - Comment parts (e.g. markers between dynamic values)
- * - Attribute parts where attribute value is a marker
- * - Event parts (attributes starting with 'on' or '@')
+ * Scans the rendered template's DOM tree and creates "Part" objects
+ * representing the dynamic placeholders that can be updated later.
  * 
- * Returns an array of Part instances for all found dynamic parts.
+ * Parts can be:
+ *  - CommentPart → dynamic value between nodes (array or single slot)
+ *  - AttributePart → dynamic attribute value
+ *  - EventPart → dynamic event listener
  * 
- * @param root The root Element of the compiled template
- * @returns Array of Part instances representing dynamic bindings
+ * @param root The root element containing the compiled template
  */
 export function getParts(root: Element): Part[] {
-  // TreeWalker to iterate over elements and comment nodes only
+  // Walker that visits only ELEMENT and COMMENT nodes (no text nodes)
   const walker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT
   );
 
   const parts: Part[] = [];
-  let node = walker.nextNode();
+  let node: Node | null = walker.currentNode; // include the root itself
   let valueIndex = 0;
 
   while (node) {
     if (node.nodeType === Node.COMMENT_NODE) {
-      // Comments with value 'marker' represent dynamic value spots
+      // COMMENT nodes with exactly 'marker' mean a dynamic placeholder
       if (node.nodeValue === 'marker') {
         parts.push(new CommentPart(node as Comment));
         valueIndex++;
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
-      // For elements, check attributes for markers indicating dynamic bindings
       const element = node as Element;
 
+      // Check every attribute for a dynamic marker
       for (let i = 0; i < element.attributes.length; i++) {
         const attribute = element.attributes[i];
 
-        // Only attributes with value '<!--marker-->' are dynamic parts
+        // Only dynamic attributes have the value "<!--marker-->"
         if (attribute.value !== "<!--marker-->") continue;
 
-        // Check if attribute is an event handler (starts with 'on' or '@')
+        // Event handlers → names start with "on" or "@"
         const eventMatch = attribute.name.match(/(on|@)(?<name>[^\s]+)/);
         if (eventMatch) {
-          // Remove event attribute since it'll be handled separately
+          // Remove it from the DOM because JS will handle the listener
           i--;
           element.removeAttribute(attribute.name);
 
-          // Create an EventPart with event name extracted from regex groups
-          parts.push(new EventPart(element, eventMatch.groups?.name ?? eventMatch[2] ?? attribute.name));
+          parts.push(new EventPart(
+            element,
+            eventMatch.groups?.name ?? eventMatch[2] ?? attribute.name
+          ));
         } else {
-          // Otherwise it's a regular attribute binding
+          // Regular dynamic attribute (class, id, key, etc.)
           parts.push(new AttributePart(element, attribute.name));
         }
 
         valueIndex++;
       }
     } else {
-      // Unexpected node type (shouldn't happen here)
       console.warn('[html] unknown node-type', node.nodeType, node);
     }
+
     node = walker.nextNode();
   }
 
   return parts;
 }
 
+/**
+ * Represents one instance of a rendered template (DOM tree + dynamic parts).
+ * Can update its parts efficiently without re-rendering everything.
+ */
 export class TemplateInstance {
   element: Element;
   parts: Part[];
@@ -81,14 +86,28 @@ export class TemplateInstance {
   }
 
   update(newValues: any[]) {
-    for (let i = 0; i < this.parts.length; i++) {
-      const newValue = newValues[i];
-      const oldValue = this.values[i];
+    const delayed:number[] = [];
 
-      if (!this.parts[i].compare(newValue, oldValue)) {
-        this.parts[i].apply(newValue, oldValue);
-        this.values[i] = newValue;
+    // Update all parts except CommentParts first (delayed for arrays)
+    for (let i = 0; i < this.parts.length; i++) {
+      if (this.parts[i] instanceof CommentPart) {
+        delayed.push(i);
+        continue;
       }
+      this.updateItem(i, newValues[i]);
+    }
+
+    // Now update CommentParts (ensures attributes are set first)
+    for (const i of delayed) {
+      this.updateItem(i, newValues[i]);
+    }
+  }
+
+  private updateItem(i:number, newValue: any) {
+    const oldValue = this.values[i];
+    if (!this.parts[i].compare(newValue, oldValue)) {
+      this.parts[i].apply(newValue, oldValue);
+      this.values[i] = newValue;
     }
   }
 
@@ -98,17 +117,15 @@ export class TemplateInstance {
   }
 }
 
-/* keep your existing TemplateInstance implementation (unchanged) */
-
-type Meta = {
-  instance?: TemplateInstance;
-  node: Node;
-}
-
-/* -------------------- SinglePart (small additions) -------------------- */
+/**
+ * Handles a single DOM slot — can contain either:
+ *  - A primitive (rendered as text)
+ *  - A DOM node
+ *  - Another TemplateInstance (nested template)
+ */
 class SinglePart implements Part {
-  private marker: Node;
-  private node: Node | null = null;
+  private marker: Node; // The comment node marking the slot's position
+  private node: Node | null = null; // Current DOM node in this slot
   private nestedInstance: TemplateInstance | null = null;
   private currentValue: any = undefined;
 
@@ -117,33 +134,34 @@ class SinglePart implements Part {
   }
 
   apply(value: any, oldValue: any): void {
+    // Skip if value is unchanged
     if (this.compare(value, this.currentValue)) return;
     this.currentValue = value;
 
-    // Template root handling (same behavior as before)
+    // Handle nested template
     if ((value as any)?.__isTemplateRoot) {
       const element = value as Element;
 
+      // If same nested template → just update values
       if (this.nestedInstance && this.nestedInstance.element === element) {
-        // Update existing instance in-place
         const newValues = getValues(element);
         if (newValues) this.nestedInstance.update(newValues);
         return;
       }
 
+      // Otherwise create new nested instance
       this.clear();
       this.nestedInstance = new TemplateInstance(element);
-      // Insert element at marker (caller will reorder later if needed)
       this.marker.parentNode?.insertBefore(element, this.marker);
       return;
     }
 
-    // If previously had a nested instance, clear it
+    // If we had a nested template before → remove it
     if (this.nestedInstance) {
       this.clear();
     }
 
-    // Node or primitive -> text node
+    // Handle DOM nodes directly
     let node: Node;
     if (value instanceof Node) {
       node = value;
@@ -153,16 +171,16 @@ class SinglePart implements Part {
         return;
       }
 
+      // If it's already a Text node → update its data
       if (this.node instanceof Text) {
-        // ✅ update in-place instead of appending new values
         this.node.data = String(value);
         return;
       }
-      
+
       node = document.createTextNode(String(value));
     }
 
-    // Avoid unnecessary DOM ops if same node object
+    // Only replace node if it's different
     if (this.node !== node) {
       this.clear();
       this.node = node;
@@ -175,7 +193,6 @@ class SinglePart implements Part {
       this.node.parentNode?.removeChild(this.node);
       this.node = null;
     }
-
     if (this.nestedInstance) {
       this.nestedInstance.destroy();
       this.nestedInstance = null;
@@ -188,10 +205,12 @@ class SinglePart implements Part {
   }
 }
 
-
+/**
+ * Handles array or single value slots that are placed in COMMENT positions.
+ * This is what powers `map`-style rendering with keys.
+ */
 class CommentPart implements Part {
   private marker: Comment;
-  private list: SinglePart[] = [];
   private map: Map<string, SinglePart> = new Map();
 
   constructor(marker: Comment) {
@@ -205,21 +224,7 @@ class CommentPart implements Part {
     }
 
     if (Array.isArray(value)) {
-      // const oldKeys = new Set(this.map.keys());
-      // const oldValues = Array.isArray(oldValue) ? oldValue : [];
-
-      // value.forEach((v, index) => {
-      //   const key = this.getKey(v, index);
-      //   oldKeys.delete(key);
-      //   this.applyItem(v, oldValues[index], key, true);
-      // });
-
-      // // remove stale parts
-      // oldKeys.forEach(key => {
-      //   this.map.get(key)?.clear();
-      //   this.map.delete(key);
-      // });
-      // return;
+      // Map of old keys → old values for diffing
       const oldMap = new Map<any, any>();
       if (Array.isArray(oldValue)) {
         oldValue.forEach((ov, idx) => {
@@ -229,6 +234,7 @@ class CommentPart implements Part {
 
       const oldKeys = new Set(this.map.keys());
 
+      // Reuse or create parts per item
       value.forEach((v, index) => {
         const key = this.getKey(v, index);
         const prev = oldMap.get(key);
@@ -236,7 +242,7 @@ class CommentPart implements Part {
         this.applyItem(v, prev, key, true);
       });
 
-      // remove stale parts
+      // Remove parts that no longer exist
       oldKeys.forEach(key => {
         this.map.get(key)?.clear();
         this.map.delete(key);
@@ -245,7 +251,7 @@ class CommentPart implements Part {
       return;
     }
 
-    // single value → always use same key
+    // Single value case — always use same key
     const key = '__single';
     this.map.forEach((p, k) => {
       if (k !== key) {
@@ -256,13 +262,25 @@ class CommentPart implements Part {
     this.applyItem(value, oldValue, key);
   }
 
+  /**
+   * Finds the "key" for a value (used for diffing arrays):
+   * - value.key (manual)
+   * - element.getAttribute("key") (template key)
+   * - element.__manualKey (manual attribute assigned in AttributePart)
+   * - fallback to array index or map size
+   */
   private getKey(value: any, index?: number) {
     if (value.key) return value.key;
 
-    if (value instanceof Element) 
-    {
+    if (value instanceof Element) {
       const key = value.getAttribute("key");
-      if (key != null) return key;
+      if (key === "<!--marker-->") {
+        if ((value as any).__manualKey !== undefined) {
+          return (value as any).__manualKey;
+        }
+      } else if (key != null) {
+        return key;
+      }
     }
 
     if (index != null) return index;
@@ -270,16 +288,20 @@ class CommentPart implements Part {
     return this.map.size;
   }
 
-  private applyItem(value: any, oldValue: any, key: any, createNewMarker: boolean = false) {
+  private applyItem(
+    value: any,
+    oldValue: any,
+    key: any,
+    createNewMarker: boolean = false
+  ) {
     if (key === undefined) key = this.getKey(value);
+
     let part = this.map.get(key);
 
     if (!part) {
       let marker = this.marker;
-      if (createNewMarker)
-      {
+      if (createNewMarker) {
         marker = document.createComment('item-marker');
-        // insert this new marker before the main marker
         this.marker.parentNode?.insertBefore(marker, this.marker);
       }
       part = new SinglePart(marker);
@@ -295,7 +317,6 @@ class CommentPart implements Part {
   }
 
   compare(a: any, b: any): boolean {
-    // Handle array case: compare length + each item shallowly
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) return false;
       for (let i = 0; i < a.length; i++) {
@@ -303,12 +324,13 @@ class CommentPart implements Part {
       }
       return true;
     }
-    
-    // Simple equality for non-array
     return a === b;
   }
 }
 
+/**
+ * Base for dynamic attribute and event parts.
+ */
 abstract class AttributeBase {
   protected readonly element: Element;
   protected readonly name: string;
@@ -327,19 +349,31 @@ abstract class AttributeBase {
   }
 }
 
+/**
+ * Handles regular dynamic attributes.
+ * Special case: "key" sets __manualKey for diffing arrays.
+ */
 class AttributePart extends AttributeBase implements Part {
   apply(value: string|null, oldValue: string|null) {
-    if (value === oldValue) return 
+    if (value === oldValue) return;
 
     if (!value) return this.clear();
 
+    if (this.name === "key") {
+      (this.element as any).__manualKey = value;
+    }
     this.element.setAttribute(this.name, value);
   }
 }
 
+/**
+ * Handles dynamic event listeners (e.g., onclick, @click).
+ */
 class EventPart extends AttributeBase {
-
-  apply(newListener: EventListenerOrEventListenerObject | null, oldListener?: EventListenerOrEventListenerObject | null) {
+  apply(
+    newListener: EventListenerOrEventListenerObject | null,
+    oldListener?: EventListenerOrEventListenerObject | null
+  ) {
     if (oldListener) {
       this.element.removeEventListener(this.name as keyof ElementEventMap, oldListener);
     }
