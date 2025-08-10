@@ -19,7 +19,7 @@ export class Basic extends CustomElement {
 
   @query<HTMLSpanElement>({
     load(this: Basic, elm) {
-      console.log('hej:', elm, this)
+      // console.log('hej:', elm, this)
     },
     selector: "span"
   }) hej!: HTMLSpanElement;
@@ -27,16 +27,16 @@ export class Basic extends CustomElement {
 
   @query<HTMLSpanElement>({
     load(this: Basic, elm) {
-      console.log('hejsan:', elm, this)
+      // console.log('ul is found:', elm, this)
     },
-    selector: "span"
+    selector: "ul"
   }) hejsan!: HTMLSpanElement;
 
   @bind
   private handleshow () {
     this.show = true;
   }
-  
+
   @bind
   private handlehide() {
     this.show = false;
@@ -45,7 +45,7 @@ export class Basic extends CustomElement {
   @bind
   private handleinc () {
     this.count++;
-    console.log(this.hej);
+    // console.log(this.hej);
   }
 
   @bind
@@ -54,6 +54,9 @@ export class Basic extends CustomElement {
   }
 
   render() {
+
+    // const a = html`<a href="#bajs">im anchor</a>`
+      // ${a}
 
     return html`
       <span>WOW</span>
@@ -65,7 +68,14 @@ export class Basic extends CustomElement {
       <button onclick=${this.handleinc}>inc</button>
       <button onclick=${this.handledec}>dec</button>
 
-      ${this.show ? html`<h1>IM ${this.count}</h1>` : null}      
+
+      ${this.show ? html`
+        <h1>IM ${this.count}</h1>
+        <ul>
+          <li>Hello World</li>
+          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key=${i}>item: ${i}</li>`)}
+        </ul>
+      ` : null}
     `;
   }
 }

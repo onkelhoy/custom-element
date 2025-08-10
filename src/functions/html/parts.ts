@@ -94,57 +94,74 @@ export class TemplateInstance {
 
   destroy() {
     this.parts.forEach(p => p.clear());
+    this.element.parentNode?.removeChild(this.element);
   }
 }
 
-class CommentPart implements Part {
-  private marker: Comment;
+/* keep your existing TemplateInstance implementation (unchanged) */
+
+type Meta = {
+  instance?: TemplateInstance;
+  node: Node;
+}
+
+/* -------------------- SinglePart (small additions) -------------------- */
+class SinglePart implements Part {
+  private marker: Node;
   private node: Node | null = null;
   private nestedInstance: TemplateInstance | null = null;
 
-  constructor(marker: Comment) {
+  constructor(marker: Node) {
     this.marker = marker;
   }
 
   apply(value: any, oldValue: any): void {
-    // Case 1: New value is a nested template
+
+    // Template root handling (same behavior as before)
     if ((value as any)?.__isTemplateRoot) {
       const element = value as Element;
 
-      // If we already have a TemplateInstance for a previous element
       if (this.nestedInstance && this.nestedInstance.element === element) {
-        // Just update it with new values
+        // Update existing instance in-place
         const newValues = getValues(element);
         if (newValues) this.nestedInstance.update(newValues);
         return;
       }
 
-      this.clear(); // Remove old content
+      this.clear();
       this.nestedInstance = new TemplateInstance(element);
+      // Insert element at marker (caller will reorder later if needed)
       this.marker.parentNode?.insertBefore(element, this.marker);
       return;
     }
 
-    // If we previously rendered a nested template, remove it
+    // If previously had a nested instance, clear it
     if (this.nestedInstance) {
       this.clear();
     }
 
-    // Case 2: Primitive or Node
+    // Node or primitive -> text node
     let node: Node;
-    if (value instanceof Node)
-    {
+    if (value instanceof Node) {
       node = value;
-    }
-    else
-    {
-      if (value == null) return void this.clear();
+    } else {
+      if (value == null) {
+        this.clear();
+        return;
+      }
+
+      if (this.node instanceof Text) {
+        // ✅ update in-place instead of appending new values
+        this.node.data = String(value);
+        return;
+      }
+      
       node = document.createTextNode(String(value));
     }
 
-    // Avoid unnecessary DOM manipulation
+    // Avoid unnecessary DOM ops if same node object
     if (this.node !== node) {
-      this.clear(); // Remove previous text node
+      this.clear();
       this.node = node;
       this.marker.parentNode?.insertBefore(node, this.marker);
     }
@@ -152,23 +169,100 @@ class CommentPart implements Part {
 
   clear(): void {
     if (this.node) {
-      if (this.node.parentNode) this.node.parentNode.removeChild(this.node);
+      this.node.parentNode?.removeChild(this.node);
       this.node = null;
     }
 
     if (this.nestedInstance) {
       this.nestedInstance.destroy();
-      this.nestedInstance.element.remove();
       this.nestedInstance = null;
     }
   }
 
-  compare(a: any, b: any): boolean {
-    // Always update nested instances (not the best!)
+  compare(value: any, oldValue: any): boolean {
     if (this.nestedInstance) return false;
+    return value === oldValue;
+  }
+}
 
-    // Primitives or nodes
-    return a === b;
+
+class CommentPart implements Part {
+  private marker: Comment;
+  private list: SinglePart[] = [];
+  private map: Map<string, SinglePart> = new Map();
+
+  constructor(marker: Comment) {
+    this.marker = marker;
+  }
+
+  apply(value: any, oldValue: any) {
+    if (value == null) {
+      this.clear();
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      const oldKeys = new Set(this.map.keys());
+      const oldValues = Array.isArray(oldValue) ? oldValue : [];
+
+      value.forEach((v, index) => {
+        const key = this.getKey(v, index);
+        oldKeys.delete(key);
+        this.applyItem(v, oldValues[index], key);
+      });
+
+      // remove stale parts
+      oldKeys.forEach(key => {
+        this.map.get(key)?.clear();
+        this.map.delete(key);
+      });
+      return;
+    }
+
+    // single value → always use same key
+    const key = '__single';
+    this.map.forEach((p, k) => {
+      if (k !== key) {
+        p.clear();
+        this.map.delete(k);
+      }
+    });
+    this.applyItem(value, oldValue, key);
+  }
+
+  private getKey(value: any, index?: number) {
+    if (value.key) return value.key;
+
+    if (value instanceof Element) 
+    {
+      const key = value.getAttribute("key");
+      if (key != null) return key;
+    }
+
+    if (index != null) return index;
+
+    return this.map.size;
+  }
+
+  private applyItem(value: any, oldValue: any, key?: any) {
+    if (key === undefined) key = this.getKey(value);
+    let part = this.map.get(key);
+
+    if (!part) {
+      part = new SinglePart(this.marker);
+      this.map.set(key, part);
+    }
+
+    part.apply(value, oldValue);
+  }
+
+  clear(): void {
+    this.map.forEach(node => node.clear());
+    this.map.clear();
+  }
+
+  compare(a: any, b: any): boolean {
+    return false;
   }
 }
 
