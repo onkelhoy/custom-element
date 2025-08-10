@@ -3,6 +3,8 @@ import { CustomElement, html, bind, property, query } from "@papit/core";
 const arr = ["henry", "simon", "layhe", "julian", "rick", "bubbles"];
 export class Basic extends CustomElement {
 
+  private nameindex = 0;
+  
   @property({
     type: Boolean,
     rerender: true,
@@ -52,17 +54,17 @@ export class Basic extends CustomElement {
   @bind
   private handleinc () {
     this.count++;
-
-    this.name = arr[this.count % arr.length];
-    // console.log(this.hej);
   }
 
   @bind
   private handledec() {
     this.count--;
+  }
 
-    this.name = arr[this.count % arr.length];
-
+  @bind 
+  private handlename() {
+    this.nameindex++;
+    this.name = arr[this.nameindex % arr.length];
   }
 
   render() {
@@ -79,6 +81,9 @@ export class Basic extends CustomElement {
       <h3>count: ${this.count}</h3>
       <button onclick=${this.handleinc}>inc</button>
       <button onclick=${this.handledec}>dec</button>
+
+      <h3>name: ${this.name}</h3>
+      <button onclick=${this.handlename}>shuffle name</button>
 
       ${this.show ? html`
         <h1>IM ${this.count}</h1>
