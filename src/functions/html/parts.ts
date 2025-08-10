@@ -110,12 +110,15 @@ class SinglePart implements Part {
   private marker: Node;
   private node: Node | null = null;
   private nestedInstance: TemplateInstance | null = null;
+  private currentValue: any = undefined;
 
   constructor(marker: Node) {
     this.marker = marker;
   }
 
   apply(value: any, oldValue: any): void {
+    if (this.compare(value, this.currentValue)) return;
+    this.currentValue = value;
 
     // Template root handling (same behavior as before)
     if ((value as any)?.__isTemplateRoot) {
@@ -202,13 +205,35 @@ class CommentPart implements Part {
     }
 
     if (Array.isArray(value)) {
+      // const oldKeys = new Set(this.map.keys());
+      // const oldValues = Array.isArray(oldValue) ? oldValue : [];
+
+      // value.forEach((v, index) => {
+      //   const key = this.getKey(v, index);
+      //   oldKeys.delete(key);
+      //   this.applyItem(v, oldValues[index], key, true);
+      // });
+
+      // // remove stale parts
+      // oldKeys.forEach(key => {
+      //   this.map.get(key)?.clear();
+      //   this.map.delete(key);
+      // });
+      // return;
+      const oldMap = new Map<any, any>();
+      if (Array.isArray(oldValue)) {
+        oldValue.forEach((ov, idx) => {
+          oldMap.set(this.getKey(ov, idx), ov);
+        });
+      }
+
       const oldKeys = new Set(this.map.keys());
-      const oldValues = Array.isArray(oldValue) ? oldValue : [];
 
       value.forEach((v, index) => {
         const key = this.getKey(v, index);
+        const prev = oldMap.get(key);
         oldKeys.delete(key);
-        this.applyItem(v, oldValues[index], key);
+        this.applyItem(v, prev, key, true);
       });
 
       // remove stale parts
@@ -216,6 +241,7 @@ class CommentPart implements Part {
         this.map.get(key)?.clear();
         this.map.delete(key);
       });
+
       return;
     }
 
@@ -244,12 +270,19 @@ class CommentPart implements Part {
     return this.map.size;
   }
 
-  private applyItem(value: any, oldValue: any, key?: any) {
+  private applyItem(value: any, oldValue: any, key: any, createNewMarker: boolean = false) {
     if (key === undefined) key = this.getKey(value);
     let part = this.map.get(key);
 
     if (!part) {
-      part = new SinglePart(this.marker);
+      let marker = this.marker;
+      if (createNewMarker)
+      {
+        marker = document.createComment('item-marker');
+        // insert this new marker before the main marker
+        this.marker.parentNode?.insertBefore(marker, this.marker);
+      }
+      part = new SinglePart(marker);
       this.map.set(key, part);
     }
 
@@ -262,7 +295,17 @@ class CommentPart implements Part {
   }
 
   compare(a: any, b: any): boolean {
-    return false;
+    // Handle array case: compare length + each item shallowly
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
+    }
+    
+    // Simple equality for non-array
+    return a === b;
   }
 }
 

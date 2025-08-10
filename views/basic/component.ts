@@ -72,8 +72,13 @@ export class Basic extends CustomElement {
       ${this.show ? html`
         <h1>IM ${this.count}</h1>
         <ul>
-          <li>Hello World</li>
+          <li>Array with keys</li>
           ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key=${i}>item: ${i}</li>`)}
+        </ul>
+
+        <ul>
+          <li>Array without keys</li>
+          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i}</li>`)}
         </ul>
       ` : null}
     `;

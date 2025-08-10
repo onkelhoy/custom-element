@@ -22,7 +22,12 @@ const cachedElements = new WeakMap<TemplateStringsArray, Element>();
  */
 export function html(templateStringArray: TemplateStringsArray, ...values: unknown[]): Element {
   // Compile or get cached DOM for this template string array
-  const root = compile(templateStringArray);
+  const proto = compile(templateStringArray);
+
+  const root = proto.cloneNode(true) as Element;
+
+  // mark this clone as an actual template root and attach its values
+  (root as any).__isTemplateRoot = true;
 
   // Store the dynamic values associated with this root element
   metadataMap.set(root, values);
@@ -74,7 +79,7 @@ function compile(templateStringArray: TemplateStringsArray): Element {
   // Normalize the fragment into a root Element (unwraps single node or wraps multiple in a div)
   const root = normalizeRoot(fragment);
 
-  (root as any).__isTemplateRoot = true;
+  // (root as any).__isTemplateRoot = true;
 
   // Cache the compiled root element for reuse
   cachedElements.set(templateStringArray, root);
