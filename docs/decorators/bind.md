@@ -151,6 +151,4 @@ export function bind<T>(
 
 ## Related docs
 
-* `docs/decorators/property.md` — reactive properties with attribute reflection.
-* `docs/decorators/query.md` — caches DOM queries in web components.
-* `docs/decorators/debounce.md` — debounce method calls for event handling.
+* [CustomElement](../custom-element.md)

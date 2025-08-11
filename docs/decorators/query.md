@@ -157,8 +157,6 @@ export function query(selector: string, all: boolean = false) {
 
 ## Related docs
 
-* `docs/decorators/property.md` — reactive properties with attribute reflection.
-* `docs/decorators/debounce.md` — debounce method calls for event handling.
-* `docs/decorators/bind.md` — binds methods to the instance (`this`) automatically.
+* [CustomElement](../custom-element.md)
 
 ---

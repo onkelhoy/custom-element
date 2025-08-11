@@ -202,6 +202,5 @@ value = 0;
 
 ## Related docs
 
-* `docs/decorators/query.md` — `@query` decorator for caching element references.
-* `docs/decorators/debounce.md` — already implemented.
-* `docs/advanced.md` — explains `TemplateInstance`, `parts`, and how `getValues(html\`...\`)\` powers updates.
+* [Advanced](../advanced.md)
+* [CustomElement](../custom-element.md)

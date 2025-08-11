@@ -124,7 +124,5 @@ function debounceFn<T extends (...args: any[]) => any>(execute: T, delay = STAND
 
 ## Related
 
-* [`debounceFn`](../functions/debounceFn.md) — standalone debouncing function (recommended if you need cancel/flush).
-* `@bind` — auto-bind methods to instances.
-* `@property` / `@query` — decorators commonly used together in `@papit/core` components.
+* [`debounceFn`](../functions/debounceFn.md)
 
