@@ -1,6 +1,6 @@
 # @papit/core
 
-[![Github Repo](https://img.shields.io/badge/Git-@papit/core-blue?logo=github\&link=https://github.com/onkelhoy/web-components/tree/main/packages/core)](https://github.com/onkelhoy/web-components/tree/main/packages/core)
+[![Github Repo](https://img.shields.io/badge/Git-@papit/core-blue?logo=github&link=https://github.com/onkelhoy/web-components/tree/main/packages/core)](https://github.com/onkelhoy/web-components/tree/main/packages/core)
 ![Layer Type](https://img.shields.io/badge/Layer_Type-core-orange)
 
 [![Tests](https://github.com/onkelhoy/web-components/actions/workflows/pull-request.yml/badge.svg)](https://github.com/onkelhoy/web-components/actions/workflows/pull-request.yml)
@@ -10,40 +10,21 @@
 
 ## Overview
 
-**`@papit/core`** is the foundation for building reactive, declarative web components using efficient template rendering and decorator-based APIs.
-It’s designed to be minimal, fast, and framework-agnostic — ideal for both standalone usage and integration into frameworks like React.
+**`@papit/core`** is a lightweight foundation for building fast, declarative web components — with powerful decorators, efficient HTML template rendering, and handy utilities.
+
+It’s minimal, framework-agnostic, and designed to be easy to integrate into both small standalone widgets and large-scale design systems.
 
 ---
 
-## Installation
+## Documentation
 
-```bash
-npm install @papit/core
-```
+📄 **[Full Documentation →](./docs/README.md)**
 
 ---
 
-## Usage
+## Acknowledgements
 
-### In plain HTML
-
-```html
-<script type="module" defer>
-  import "@papit/core";
-</script>
-
-<my-element></my-element>
-```
-
-### In React
-
-```jsx
-import { MyElement } from "@papit/core/react";
-
-function Component() {
-  return <MyElement />;
-}
-```
+💌 Special thanks to my loving wife **Phuong** — your support and patience make all the difference. 💛
 
 ---
 
@@ -55,7 +36,7 @@ Development takes place inside the `src` folder.
 
 ```bash
 npm run component:add
-```
+````
 
 This will:
 
@@ -104,10 +85,54 @@ This launches a demo server from the `views` folder.
 
 ---
 
-## Acknowledgements
+## Example — Creating a Counter Component
 
-Special thanks to my loving wife **Phuong** — your support and patience make all the difference. 💛
+Below is a small but complete example showing several key features in `@papit/core`:
 
----
+* **Reactive properties** via `@property`
+* **DOM queries** via `@query`
+* **Event debouncing** via `@debounce` and `debounceFn`
+* **Method binding** via `@bind`
+* **Declarative rendering** via the `html` tag
 
-If you’d like, I can also add a **"Quick Start"** code example showing a minimal `CustomElement` subclass in action, so that users immediately see how `@papit/core` works. That would make the README much more inviting for first-time visitors. Would you like me to add that?
+```ts
+import { 
+  CustomElement, html, property, query, debounce, bind, debounceFn 
+} from "@papit/core";
+
+class MyCounter extends CustomElement {
+  @property({ type: Number }) count = 0;
+  @query("#incBtn") incrementButton!: HTMLButtonElement;
+
+  @debounce(300)
+  onIncrement() { this.count++; }
+
+  @bind
+  onReset() { this.count = 0; }
+
+  connectedCallback() {
+    super.connectedCallback();
+    const log = debounceFn(() => console.log("Count:", this.count), 500);
+    this.addEventListener("update", log);
+  }
+
+  render() {
+    return html`
+      <div>
+        <h2>Count: ${this.count}</h2>
+        <button id="incBtn" @click=${this.onIncrement}>+1</button>
+        <button @click=${this.onReset}>Reset</button>
+      </div>
+    `;
+  }
+}
+
+customElements.define("my-counter", MyCounter);
+```
+
+Once registered, you can use it anywhere:
+
+```html
+<my-counter></my-counter>
+```
+
