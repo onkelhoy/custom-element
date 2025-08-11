@@ -14,17 +14,18 @@
 
 It’s minimal, framework-agnostic, and designed to be easy to integrate into both small standalone widgets and large-scale design systems.
 
----
+> Developer status: not ready yet
+> - currently missing style
 
-## Documentation
+### Documentation
 
 📄 **[Full Documentation →](./docs/README.md)**
 
----
-
-## Acknowledgements
+### Acknowledgements
 
 💌 Special thanks to my loving wife **Phuong** — your support and patience make all the difference. 💛
+
+shoutout **Christian Norrman** to my collegue who opened my eyes for the way we can only update values without having to do hard core element diffing like previous versions
 
 ---
 
@@ -105,24 +106,16 @@ class MyCounter extends CustomElement {
   @query("#incBtn") incrementButton!: HTMLButtonElement;
 
   @debounce(300)
-  onIncrement() { this.count++; }
+  handleIncrement() { this.count++; }
 
   @bind
-  onReset() { this.count = 0; }
-
-  connectedCallback() {
-    super.connectedCallback();
-    const log = debounceFn(() => console.log("Count:", this.count), 500);
-    this.addEventListener("update", log);
-  }
+  handleReset() { this.count = 0; }
 
   render() {
     return html`
-      <div>
-        <h2>Count: ${this.count}</h2>
-        <button id="incBtn" @click=${this.onIncrement}>+1</button>
-        <button @click=${this.onReset}>Reset</button>
-      </div>
+      <h2>Count: ${this.count}</h2>
+      <button id="incBtn" @click=${this.handleIncrement}>+1</button>
+      <button @click=${this.handleReset}>Reset</button>
     `;
   }
 }
