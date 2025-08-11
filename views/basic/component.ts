@@ -4,7 +4,7 @@ const arr = ["henry", "simon", "layhe", "julian", "rick", "bubbles"];
 export class Basic extends CustomElement {
 
   private nameindex = 0;
-  
+
   @property({
     type: Boolean,
     rerender: true,
@@ -67,25 +67,35 @@ export class Basic extends CustomElement {
     this.name = arr[this.nameindex % arr.length];
   }
 
-  render() {
+  renderShowButtons() {
+    return html`
+      <h3>show: ${String(this.show)}</h3>
+      <button onclick=${this.handleshow}>show</button>
+      <button onclick=${this.handlehide}>hide</button>
+    `
+  }
+  renderCountButtons() {
+    return html`
+      <h3>count: ${this.count}</h3>
+      <button onclick=${this.handleinc}>inc</button>
+      <button onclick=${this.handledec}>dec</button>
+    `
+  }
+
+  renderListAdvanced() {
 
     // const a = html`<a href="#bajs">im anchor</a>`
       // ${a}
 
     return html`
       <span>WOW</span>
-      <h3>show: ${this.show}</h3>
-      <button onclick=${this.handleshow}>show</button>
-      <button onclick=${this.handlehide}>hide</button>
-
-      <h3>count: ${this.count}</h3>
-      <button onclick=${this.handleinc}>inc</button>
-      <button onclick=${this.handledec}>dec</button>
+      ${this.renderShowButtons()}
+      ${this.renderCountButtons()}
 
       <h3>name: ${this.name}</h3>
       <button onclick=${this.handlename}>shuffle name</button>
 
-      ${this.show ? html`
+      ${this.show && html`
         <h1>IM ${this.count}</h1>
         <ul>
           <li>Array with keys</li>
@@ -94,10 +104,52 @@ export class Basic extends CustomElement {
 
         <ul>
           <li>Array without keys</li>
-          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i} ${i === 5 ? html`<strong>FIVE ${this.name}</strong>` : null}</li>`)}
+          ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`
+            <li>
+              item: ${i} ${i === 5 ? html`<strong>FIVE ${this.name}</strong>` : null} 
+              <ul>
+                ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i}</li>`)}
+              </ul>
+            </li>
+          `)}
         </ul>
-      ` : null}
+      `}
     `;
+  }
+
+
+  renderListSimple() {
+
+    return html`
+      ${this.renderCountButtons()}
+
+      <h3>name: ${this.name}</h3>
+      <button onclick=${this.handlename}>shuffle name</button>
+
+      <ul>
+        ${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`
+          <li>
+            item: ${i}
+            <strong>FIVE ${this.name}</strong>
+            <ul>${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i}</li>`)}</ul>  
+          </li>
+        `)}
+      </ul>
+    `;
+  }
+
+  renderConditional() {
+    return html`
+      ${this.renderShowButtons()}
+
+      ${this.show && html`<strong>hello world</strong>`}
+
+      ${this.show ? html`hello` : null}
+    `
+  }
+
+  render() {
+    return this.renderConditional();
   }
 }
 

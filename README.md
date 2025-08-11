@@ -1,61 +1,113 @@
-# NewCore
+# @papit/core
 
-[![Github Repo](https://img.shields.io/badge/Git-@papit/new-core-blue?logo=github&link=https://github.com/onkelhoy/web-components/tree/main/packages/temp/new-core)](https://github.com/onkelhoy/web-components/tree/main/packages/temp/new-core)
-![Layer Type](https://img.shields.io/badge/Layer_Type-temp-orange)
+[![Github Repo](https://img.shields.io/badge/Git-@papit/core-blue?logo=github\&link=https://github.com/onkelhoy/web-components/tree/main/packages/core)](https://github.com/onkelhoy/web-components/tree/main/packages/core)
+![Layer Type](https://img.shields.io/badge/Layer_Type-core-orange)
 
 [![Tests](https://github.com/onkelhoy/web-components/actions/workflows/pull-request.yml/badge.svg)](https://github.com/onkelhoy/web-components/actions/workflows/pull-request.yml)
-[![NPM version](https://img.shields.io/npm/v/@papit/new-core.svg?logo=npm)](https://www.npmjs.com/package/@papit/new-core)
+[![NPM version](https://img.shields.io/npm/v/@papit/core.svg?logo=npm)](https://www.npmjs.com/package/@papit/core)
 
-## Use Case
+---
 
-### installation
+## Overview
+
+**`@papit/core`** is the foundation for building reactive, declarative web components using efficient template rendering and decorator-based APIs.
+It’s designed to be minimal, fast, and framework-agnostic — ideal for both standalone usage and integration into frameworks like React.
+
+---
+
+## Installation
 
 ```bash
-npm install @papit/new-core
+npm install @papit/core
 ```
 
-### to use in **html**
+---
+
+## Usage
+
+### In plain HTML
 
 ```html
 <script type="module" defer>
-  import "@papit/new-core";
+  import "@papit/core";
 </script>
 
-<new-core></new-core>
+<my-element></my-element>
 ```
 
-### to use in **react**
+### In React
 
 ```jsx
-import { NewCore } from "@papit/new-core/react";
+import { MyElement } from "@papit/core/react";
 
 function Component() {
-  return (
-    <NewCore /> 
-  )
+  return <MyElement />;
 }
 ```
 
-## Development
+---
 
-Development takes place within the `src` folder. To add a new subcomponent, use the command `npm run component:add`. This command updates the `.env` file, creates a view folder, and adds a subfolder in the `components` folder (creating it if it doesn't exist) inside `src` with all the necessary files.
+## Development Workflow
 
-Styling is managed in the `style.scss` file, which automatically generates a `style.ts` file for use in the component.
+Development takes place inside the `src` folder.
 
-## Viewing
+### Adding a new subcomponent
 
-To view the component, run `npm start`. This command is equivalent to `npm run start demo` and launches the development server for the demo folder located within the `views` folder. This allows you to preview your component during development.
+```bash
+npm run component:add
+```
+
+This will:
+
+* Update `.env`
+* Create a view folder
+* Create the corresponding folder under `src/components`
+* Generate starter files
+
+---
+
+## Styling
+
+* Edit styles in `style.scss`
+* Styles are automatically compiled into `style.ts` for component consumption
+
+---
+
+## Live Preview
+
+To preview during development:
+
+```bash
+npm start
+```
+
+This launches a demo server from the `views` folder.
+
+---
 
 ## Assets
 
-All assets required by the component, such as icons and images for translations, should be placed in the `assets` folder. This folder will already include an `icons` and `translations` folder with an `en.json` file for English translations. Use this structure to organize translations and make them easily accessible for other projects.
+* **Component assets** (icons, translations, etc.) → store in `assets/`
+* **Demo-only assets** → store in `views/<demo>/public/`
 
-For assets used solely for display or demo purposes, create a `public` folder under the relevant directory inside the `views` folder. These assets are not included in the component package.
+---
 
-## Commands
+## Available Commands
 
-- **build**: Builds the component in development mode. Use the `--prod` flag (`npm run build -- --prod`) for a production build, which includes minification.
-- **watch**: Watches for changes to the component files and rebuilds them automatically without starting the development server.
-- **start**: Starts the development server for a specific demo. The target folder within the `views` directory must contain an `index.html` file. Usage example: `npm run start --name=<folder>`.
-- **analyse**: Generates a comprehensive analysis file, mainly useful for React scripts and potentially for generating pages. The analysis file is only generated if it does not exist, unless the `--force` flag is used. Optional flags include `--verbose` and `--force`.
-- **react**: Generates the necessary React code based on the web component code, including any subcomponents. The generated code will not overwrite existing files, allowing for manual customization. Flags: `--verbose` & `--force`.
+| Command     | Description                                                                        |
+| ----------- | ---------------------------------------------------------------------------------- |
+| **build**   | Builds the component. Add `--prod` for minification.                               |
+| **watch**   | Watches for file changes and rebuilds.                                             |
+| **start**   | Starts the demo server for a specific view.                                        |
+| **analyse** | Generates an analysis file (with `--verbose` and/or `--force` flags).              |
+| **react**   | Generates React wrappers for components (with `--verbose` and/or `--force` flags). |
+
+---
+
+## Acknowledgements
+
+Special thanks to my loving wife **Phuong** — your support and patience make all the difference. 💛
+
+---
+
+If you’d like, I can also add a **"Quick Start"** code example showing a minimal `CustomElement` subclass in action, so that users immediately see how `@papit/core` works. That would make the README much more inviting for first-time visitors. Would you like me to add that?

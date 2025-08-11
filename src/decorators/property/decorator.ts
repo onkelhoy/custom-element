@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Implements the `@property` decorator for defining reactive properties
+ * on custom elements. Supports attribute-property reflection, change callbacks, 
+ * before/after hooks, and re-render triggers.
+ *
+ * @details
+ * - Properties can be bound to attributes for automatic synchronization.
+ * - Internal update prevention avoids infinite reflection loops.
+ * - Supports type conversion for String, Number, Boolean, and JSON-serializable values.
+ * - Includes deep equality checking to avoid redundant updates.
+ *
+ * @author Henry Pap (GitHub: @onkelhoy)
+ * @created 2025-08-11
+ */
+
 import { Setting } from "./types";
 import { PropertyMeta } from "@element/types";
 
@@ -8,8 +23,24 @@ const defaultSettings: Partial<Setting> = {
   removeAttribute: true,
 };
 
+/**
+ * A property decorator for defining reactive properties on a custom element.
+ *
+ * Can be used in two forms:
+ * - `@property` with no arguments → default settings applied.
+ * - `@property({...})` → pass custom settings such as `attribute`, `type`, `before`, `after`, etc.
+ *
+ * @param settings Partial settings object controlling reflection, hooks, and behavior.
+ */
 export function property(settings: Partial<Setting>): PropertyDecorator;
+/**
+ * Overload for decorator used without arguments.
+ *
+ * @param target The prototype of the class.
+ * @param propertyKey The property name.
+ */
 export function property(target: Object, propertyKey: PropertyKey): void;
+
 export function property(
   targetOrSettings: Object | Partial<Setting>,
   maybeKey?: PropertyKey
@@ -113,6 +144,9 @@ function define(target: any, propertyKey: PropertyKey, _settings: Partial<Settin
 
 
 // helper functions 
+/**
+ * Converts an attribute string value into the appropriate type.
+ */
 function parseAttributeValue(value:string|null|undefined, type: Function = String) {
   if (value === null || value === undefined) return value;
 
@@ -137,6 +171,9 @@ function parseAttributeValue(value:string|null|undefined, type: Function = Strin
     }
   }
 }
+/**
+ * Converts a property value into a string suitable for an attribute.
+ */
 function stringifyPropertyValue(value: any, type: Function = String) {
   switch (type.name)
   {
@@ -149,6 +186,11 @@ function stringifyPropertyValue(value: any, type: Function = String) {
   }
 }
 
+/**
+ * Deep equality check with recursion limit.
+ *
+ * @throws If recursion exceeds `maxReqursiveSteps`.
+ */
 function sameValue(a:any, b:any, maxReqursiveSteps = 20, reqursiveSteps = 0) {
   if (reqursiveSteps > maxReqursiveSteps) 
   {
@@ -176,7 +218,7 @@ function sameValue(a:any, b:any, maxReqursiveSteps = 20, reqursiveSteps = 0) {
       }
 
       const keysA = Object.keys(a);
-      const keysB = Object.keys(a);
+      const keysB = Object.keys(b);
 
       if (keysA.length !== keysB.length) return false;
       for (let i=0; i<keysA.length; i++)

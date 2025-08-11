@@ -1,6 +1,41 @@
-// import { AttributePart, CommentPart, EventPart } from "./parts";
-// import { Part } from "./types";
-
+/**
+ * @fileoverview Provides a lightweight `html` tagged template function for creating
+ * and caching DOM elements from template literals, with support for dynamic values
+ * and metadata tracking.
+ *
+ * @details
+ * **Features:**
+ * - **Compilation & Caching** — Templates are compiled into DOM once and reused on subsequent calls.
+ * - **Dynamic Value Markers** — Injects comment markers to identify and update dynamic values.
+ * - **Metadata Tracking** — Associates root elements with their latest set of dynamic values.
+ * - **Root Normalization** — Ensures a single Element root is always returned, wrapping as needed.
+ * - **Quoting Fixes** — Automatically adds missing attribute quotes for valid HTML output.
+ *
+ * **Usage Flow:**
+ * 1. The `html` function compiles or retrieves a cached template root.
+ * 2. A clone of the root element is created for each call.
+ * 3. Dynamic values are stored in an internal `WeakMap` for later updates.
+ *
+ * @example
+ * ```ts
+ * const view = html`
+ *   <div class="user">${username}</div>
+ * `;
+ * document.body.append(view);
+ *
+ * const values = getValues(view); // Retrieve dynamic values array
+ * ```
+ *
+ * @see {@link getValues} — Retrieves the stored dynamic values for a root element.
+ *
+ * @internal
+ * This is the low-level core for the template system; higher-level rendering functions
+ * may build on this to perform DOM diffing and patching.
+ *
+ * @created 2025-08-11
+ * @author
+ * Henry Pap (GitHub: @onkelhoy)
+ */
 
 // Metadata map to associate root elements with their dynamic values
 // Used to store the latest set of values applied to a rendered template
@@ -22,7 +57,7 @@ const cachedElements = new WeakMap<TemplateStringsArray, Element>();
  */
 export function html(templateStringArray: TemplateStringsArray, ...values: unknown[]): Element {
   // Compile or get cached DOM for this template string array
-  const proto = compile(templateStringArray);
+  const proto = compile(templateStringArray, values);
 
   const root = proto.cloneNode(true) as Element;
 
@@ -42,7 +77,7 @@ export function html(templateStringArray: TemplateStringsArray, ...values: unkno
  * @param templateStringArray The template literal strings array
  * @returns Root Element of the compiled template
  */
-function compile(templateStringArray: TemplateStringsArray): Element {
+function compile(templateStringArray: TemplateStringsArray, values: unknown[]): Element {
   // Return cached root element if it exists
   if (cachedElements.has(templateStringArray)) {
     return cachedElements.get(templateStringArray)!;
@@ -55,8 +90,10 @@ function compile(templateStringArray: TemplateStringsArray): Element {
   let expectQuote = false;
 
   // Join template strings inserting comment markers to mark dynamic parts
-  template.innerHTML = templateStringArray.map((str) => {
-    let fixedStr = str;
+  let result = '';
+  for (let i=0; i<templateStringArray.length; i++)
+  {
+    let fixedStr = templateStringArray[i];
 
     // If last string ended with '=', ensure next string starts with '"'
     if (expectQuote) {
@@ -70,8 +107,18 @@ function compile(templateStringArray: TemplateStringsArray): Element {
       expectQuote = true;
     }
 
-    return fixedStr;
-  }).join('<!--marker-->');
+    result += fixedStr;
+
+    // guess this case should not happend but just for sanity 
+    if (i >= values.length) continue;
+
+    // now append the markers 
+    if (Array.isArray(values[i])) 
+      result += '<!--list-marker-->';
+    else 
+      result += '<!--marker-->';
+  }
+  template.innerHTML = result;
 
   // Clone content from the template element to create a DocumentFragment
   const fragment = template.content.cloneNode(true) as DocumentFragment;

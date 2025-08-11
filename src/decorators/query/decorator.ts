@@ -1,8 +1,37 @@
-import { CustomElement } from "@element/custom-element";
+/**
+ * @fileoverview Provides the `@query` decorator for automatically wiring
+ * up DOM element references in `CustomElement` subclasses.
+ *
+ * The decorator stores metadata (selector, load callback, property key)
+ * that is later used by `CustomElement`'s `findQueries()` method to
+ * populate decorated properties.
+ *
+ * @author Henry Pap (GitHub: @onkelhoy)
+ * @created 2025-08-11
+ */
+
 import { Setting } from "./types";
 import { QueryMeta } from "@element/types";
 
+/**
+ * A property decorator that registers a DOM query for the decorated property.
+ *
+ * Can be used in two forms:
+ * - `@query` with no arguments → property name is used as selector
+ * - `@query('selector')` or `@query({ selector: '...', load: el => {} })`
+ *
+ * When the component updates, the matching element is assigned to the property.
+ *
+ * @template T The type of the element being queried (defaults to `HTMLElement`).
+ * @param settings Either a selector string, a partial `Setting<T>`, or omitted.
+ */
 export function query<T extends Element = HTMLElement>(settings: string | Partial<Setting<T>>): PropertyDecorator;
+
+/**
+ * Overload for decorator used without arguments.
+ * @param target The prototype of the class.
+ * @param propertyKey The name of the property.
+ */
 export function query(target: Object, propertyKey: PropertyKey): void;
 
 export function query<T extends Element = HTMLElement>(
