@@ -113,12 +113,12 @@ export type Setting<T = any> = {
    * Hook called just before the value is set.
    * Useful for validation, logging, or mutation.
    */
-  before(value: T, old: T, initial: boolean): void;
+  before(value: T, old: T, initial: boolean, attributeUpdate: boolean): void;
 
   /**
    * Hook called immediately after the value is set.
    * Receives the new value and the previous value.
    * Useful for triggering side effects like re-renders or DOM updates.
    */
-  after(value: T, old: T, initial: boolean): void;
+  after(value: T, old: T, initial: boolean, attributeUpdate: boolean): void;
 }

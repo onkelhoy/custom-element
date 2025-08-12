@@ -1,17 +1,40 @@
 import { getDescriptors } from '@functions/part/descriptors';
 import type { Part, PartFactory, PartHelpers, ITemplateInstance, PartDescriptor } from '@functions/part/types';
 
-
 type Meta = {
   descriptor: PartDescriptor;
   part: Part;
 }
+
 /**
- * Represents one instance of a rendered template (DOM tree + dynamic parts).
- * Can update its parts efficiently without re-rendering the entire DOM.
+ * @fileoverview
+ * Represents a single rendered template instance: a DOM tree plus its dynamic parts.
+ *
+ * @details
+ * - Created from a root element and a `PartFactory`.
+ * - Manages an ordered collection of `Part`s (attributes, events, nodes, etc.).
+ * - Updates only the changed parts without re-rendering the entire template.
+ * - Optimizes update order:
+ *   1. Attributes/events first (ensures DOM sync before children update).
+ *   2. All other parts afterward.
+ *
+ * @example
+ * const instance = new TemplateInstance(rootElement, partFactory);
+ * instance.update(valuesArray);
+ *
+ * // Later:
+ * instance.remove(); // cleans DOM & parts
+ *
+ * @see Part
+ * @see PartFactory
+ * @see PartHelpers
+ * @see getDescriptors
+ * 
+ * @created 2025-08-12
+ * @author Henry
  */
 export class TemplateInstance implements ITemplateInstance {
-  private parts: Part[];
+  private meta: Meta[];
   private indexList: number[];
 
   constructor(
@@ -28,27 +51,43 @@ export class TemplateInstance implements ITemplateInstance {
     let attributes:number[] = [];
     let rest:number[] = [];
 
-    this.parts = descriptors.map((descriptor, index) => {
+    this.meta = descriptors.map((descriptor, index) => {
       if (["attr", "event"].includes(descriptor.kind))
         attributes.push(index);
       else 
         rest.push(index);
 
-      return this.partFactory(descriptor, helpers);
+      return {
+        part: this.partFactory(descriptor, helpers),
+        descriptor,
+      }
     });
 
     this.indexList = [...attributes, ...rest];
   }
 
+  /**
+   * Updates all dynamic parts with the provided values.
+   * @param values The array of values corresponding to part indices.
+   */
   update(values: any[]) {
     for (const i of this.indexList) 
     {
-      this.parts[i].apply(values[i]);
+      if (this.meta[i].descriptor.kind === "attr")
+      {
+        const v = values.slice(i, i + this.meta[i].descriptor.strings.length);
+        this.meta[i].part.apply(v);
+      }
+      else 
+      {
+        this.meta[i].part.apply(values[i]);
+      }
     }
   }
 
   remove() {
-    this.parts.forEach(part => part.remove());
+    this.meta.forEach(meta => meta.part.remove());
+    this.meta = [];
     this.root.parentNode?.removeChild(this.root);
   }
 

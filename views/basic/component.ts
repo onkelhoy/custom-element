@@ -17,9 +17,17 @@ export class Basic extends CustomElement {
     type: Number,
     rerender: true,
     attribute: "counter",
+    after: function(this: Basic, value:number, old:number, initial: boolean, isAttribute) {
+      if (isAttribute) this.arr = new Array(value).fill(0).map((_v, i) => i);
+    }
   })
   private count = 0;
 
+  @property({
+    type: Array,
+    rerender: true,
+  })
+  private arr:number[] = [];
 
   @property({
     rerender: true,
@@ -54,11 +62,13 @@ export class Basic extends CustomElement {
   @bind
   private handleinc () {
     this.count++;
+    this.arr.push(this.arr.length);
   }
 
   @bind
   private handledec() {
     this.count--;
+    this.arr.pop();
   }
 
   @bind 
@@ -131,7 +141,23 @@ export class Basic extends CustomElement {
           <li>
             item: ${i}
             <strong>FIVE ${this.name}</strong>
-            <ul>${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key="key${i}">item: ${i}</li>`)}</ul>  
+            <ul>${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key="heee${i}">item: ${i}</li>`)}</ul>  
+          </li>
+        `)}
+      </ul>
+    `;
+  }
+
+  renderListInternal() {
+
+    return html`
+      ${this.renderCountButtons()}
+
+      <ul>
+        ${this.arr.map(i => html`
+          <li key="sss${i}">
+            item ${i}
+            <ul>${this.arr.map(i => html`<li key="heee${i}">item: ${i}</li>`)}</ul>  
           </li>
         `)}
       </ul>
@@ -165,8 +191,10 @@ export class Basic extends CustomElement {
     `
   }
 
+
+
   render() {
-    return this.renderAttributeCase();
+    return this.renderListInternal();
   }
 }
 

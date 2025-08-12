@@ -54,8 +54,8 @@ count: number;
 | `readonly`                    |                             `boolean` | `false`         | When true, property may be set only once; reassignment throws.                                    |
 | `rerender`                    |                             `boolean` | `false`         | When true, on non-initial changes the property will call `this.requestUpdate()` (if present).     |
 | `removeAttribute`             |                             `boolean` | `true`          | When clearing a property (null/undefined/false) remove the attribute instead of setting a string. |
-| `before`                      | `(newVal, oldVal, isInitial) => void` | —               | Hook called synchronously before the value is stored.                                             |
-| `after`                       | `(newVal, oldVal, isInitial) => void` | —               | Hook called synchronously after the value is stored.                                              |
+| `before`                      | `(newVal, oldVal, isInitial, isAttribute) => void` | —               | Hook called synchronously before the value is stored.                                             |
+| `after`                       | `(newVal, oldVal, isInitial, isAttribute) => void` | —               | Hook called synchronously after the value is stored.                                              |
 | `get` / `set`                 |                             functions | —               | You may provide getter/setter wrappers in options to customize access.                            |
 | `configurable` / `enumerable` |                             `boolean` | `true` / `true` | Controls generated property descriptor flags.                                                     |
 | `maxReqursiveSteps`           |                              `number` | `20`            | Controls how deeply the decorator's equality check will recurse for complex values.               |
@@ -102,7 +102,7 @@ The decorator uses an `internalUpdate` boolean to avoid feedback loops between a
 
 ### Hooks & lifecycle
 
-* `before` is invoked before the value is stored (receives `(newVal, oldVal, isInitial)`).
+* `before` is invoked before the value is stored (receives `(newVal, oldVal, isInitial, isAttribute)`).
 * `after` is invoked after the value is stored (receives same args).
 * `isInitial` indicates the initial assignment (true on first set).
 

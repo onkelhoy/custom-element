@@ -2,7 +2,7 @@ export type PartDescriptor =
   | { kind: 'value', marker: Comment }
   | { kind: 'list', marker: Comment }
   | { kind: 'nested', marker: Comment }
-  | { kind: 'attr', element: Element, name: string }
+  | { kind: 'attr', element: Element, name: string, strings: string[] }
   | { kind: 'event', element: Element, name: string };
 
 export interface Part {

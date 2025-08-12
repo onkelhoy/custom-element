@@ -1,9 +1,26 @@
 import type { Part, PartHelpers } from "@functions/part/types";
 
 /**
- * Handles dynamic values in a template, replacing a marker comment with
- * strings, DOM nodes, or nested template instances, and efficiently updating
- * them without re-rendering the full template.
+ * @fileoverview Handles dynamic values in a template.
+ *
+ * @details
+ * - Replaces a marker comment with strings, DOM nodes, or nested templates.
+ * - Avoids full re-renders by only updating the changed value.
+ * - Supports:
+ *   1. Nested template roots (`__isTemplateRoot`)
+ *   2. Direct DOM `Node` insertion
+ *   3. Primitive-to-string conversion
+ *
+ * @example
+ * const part = new ValuePart(marker, helpers);
+ * part.apply("Hello");
+ * part.apply(document.createElement("span"));
+ *
+ * @see Part
+ * @see PartHelpers
+ * 
+ * @created 2025-08-12
+ * @author Henry
  */
 export class ValuePart implements Part {
   private value: any = null;
@@ -15,6 +32,10 @@ export class ValuePart implements Part {
     private helpers: PartHelpers
   ) {}
 
+  /**
+   * Inserts or updates the value before the marker.
+   * @param newValue Strings, Nodes, or nested template roots.
+   */
   apply(newValue: any) {
     if (!newValue && newValue != 0) return void this.clear();
     if (newValue === this.value) return;

@@ -1,8 +1,21 @@
 import type { Part } from "@functions/part/types";
 
 /**
- * Handles binding and unbinding of DOM event listeners for a given element and event name.
- * Ensures previous listeners are removed before adding new ones.
+ * @fileoverview Manages binding and unbinding of DOM event listeners.
+ *
+ * @details
+ * - Ensures old listeners are removed before new ones are attached.
+ * - Supports both function listeners and `EventListenerObject` handlers.
+ *
+ * @example
+ * // Used internally by the template engine:
+ * const part = new EventPart(button, "click");
+ * part.apply(() => console.log("Clicked"));
+ *
+ * @see Part
+ * 
+ * @author Henry Pap
+ * @created 2025-08-12
  */
 export class EventPart implements Part {
 
@@ -13,6 +26,10 @@ export class EventPart implements Part {
     private name:string,
   ) {}
 
+  /**
+   * Attaches a new listener and removes any previously bound one.
+   * @param value The event listener or `EventListenerObject`, or `null` to unbind.
+   */
   apply( 
     value: EventListenerOrEventListenerObject | null
   ) {

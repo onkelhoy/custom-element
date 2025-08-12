@@ -20,7 +20,7 @@ export const partFactory: PartFactory = (desc, helpers) => {
     case 'value': return new ValuePart(desc.marker, helpers);
     case 'list': return new ListPart(desc.marker, helpers);
     case 'nested': return new NestedPart(desc.marker, helpers);
-    case 'attr': return new AttributePart(desc.element, desc.name);
+    case 'attr': return new AttributePart(desc.element, desc.name, desc.strings);
     case 'event': return new EventPart(desc.element, desc.name);
     default: throw new Error(`Unknown part kind: ${(desc as any).kind}`);
   }

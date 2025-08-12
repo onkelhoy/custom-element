@@ -111,8 +111,10 @@ function define(target: any, propertyKey: PropertyKey, _settings: Partial<Settin
 
       const isInitial = !Object.hasOwn(this, privateKey);
 
+      const isAttributeUpdate = internalUpdate;
+
       if (settings.before) {
-        settings.before.call(this, value, oldVal, isInitial);
+        settings.before.call(this, value, oldVal, isInitial, isAttributeUpdate);
       }
       
       this[privateKey] = value;
@@ -132,7 +134,7 @@ function define(target: any, propertyKey: PropertyKey, _settings: Partial<Settin
       internalUpdate = false;
 
       if (settings.after) {
-        settings.after.call(this, value, oldVal, isInitial);
+        settings.after.call(this, value, oldVal, isInitial, isAttributeUpdate);
       }
 
       if (!isInitial && settings.rerender && typeof this.requestUpdate === 'function') {

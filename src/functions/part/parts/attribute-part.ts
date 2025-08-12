@@ -1,10 +1,22 @@
 import type { Part } from "@functions/part/types";
 
 /**
- * A dynamic attribute binding for an element.
- * Updates or clears a single attribute based on value changes.
- * Special-cases `key` so it's stored on the element synchronously
- * for list diffing without relying on browser frame updates.
+ * @fileoverview Handles reactive binding for a single HTML attribute.
+ *
+ * @details
+ * - Updates or removes an attribute when its bound value changes.
+ * - Treats `"key"` as a special case for list diffing: it is stored directly
+ *   on the element (bypassing setAttribute) for synchronous access.
+ *
+ * @example
+ * // Used internally by the template engine:
+ * const part = new AttributePart(el, "class", [""]);
+ * part.apply(["btn-primary"]);
+ *
+ * @see Part
+ * 
+ * @author Henry Pap
+ * @created 2025-08-12
  */
 export class AttributePart implements Part {
 
@@ -13,24 +25,35 @@ export class AttributePart implements Part {
   constructor(
     private element:Element,
     private name:string,
+    public strings: string[],
   ) {}
   
-  apply(value: string|null) {
+  /**
+   * Updates the attribute with new values.
+   * @param values String fragments matching the `strings` template parts.
+   */
+  apply(values: (string|null)[]) {
+    let value = "";
+    for (let i=0; i<values.length; i++) 
+    {
+      value += this.strings[i];
+      value += values[i];
+    }
+
     if (value === this.value) return;
     this.value = value;
 
-    console.log('assinging attribute', this.name, value);
-    if (!value && value !== "") return void this.clear();
-
-    // key is special for managing lists and we cannot rely on attribute as it assigns only on next browser frame-update 
-    if (this.name === "key") { 
+    if (this.name === "key")
       (this.element as any).key = value;
-    }
-    this.element.setAttribute(this.name, value);
+    else 
+      this.element.setAttribute(this.name, value);
   }
 
   clear() {
-    this.element.removeAttribute(this.name);
+    if (this.name === "key") 
+      delete (this.element as any).key; 
+    else 
+      this.element.removeAttribute(this.name);
   }
 
   remove() {

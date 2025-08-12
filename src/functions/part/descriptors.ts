@@ -1,8 +1,9 @@
 import { PartDescriptor } from "./types";
 
 /**
- * Extracts "part descriptors" from a DOM element tree.
+ * @fileoverview Extracts "part descriptors" from a DOM element tree.
  *
+ * @details
  * A part descriptor is metadata that describes a dynamic section
  * of the DOM (e.g. a value placeholder, a list placeholder, a dynamic
  * attribute, or an event binding). These are later turned into `Part`
@@ -11,6 +12,9 @@ import { PartDescriptor } from "./types";
  * @param {Element} root - The root DOM element of the rendered template.
  * @returns {PartDescriptor[]} An array of descriptors representing dynamic
  * parts of the template.
+ * 
+ * @created 2025-08-11
+ * @author Henry
  */
 export function getDescriptors(root: Element): PartDescriptor[] {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT);
@@ -29,8 +33,8 @@ export function getDescriptors(root: Element): PartDescriptor[] {
       const el = node as Element;
       for (const attr of Array.from(el.attributes)) 
       {
-        console.log('attr', attr.name, attr.value)
-        if (attr.value === '<!--marker-->') 
+        
+        if (/\<!--marker--\>/.test(attr.value)) 
         {
           const eventMatch = attr.name.match(/^(on|@)(?<name>.*)/);
           if (eventMatch) 
@@ -38,7 +42,14 @@ export function getDescriptors(root: Element): PartDescriptor[] {
             el.removeAttribute(attr.name);
             descriptors.push({ kind: 'event', element: el, name: eventMatch.groups?.name! });
           }
-          else descriptors.push({ kind: 'attr', element: el, name: attr.name });
+          else {
+            const strings = attr.value.split("<!--marker-->").filter(Boolean);
+            if (attr.name === "key")
+            {
+              el.removeAttribute("key");
+            }
+            descriptors.push({ kind: 'attr', element: el, name: attr.name, strings: strings.length > 0 ? strings : [''] });
+          }
         }
       }
     }
