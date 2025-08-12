@@ -1,7 +1,7 @@
 # CustomElement Base Class
 
-> File: `docs/custom-element.md`  
-> Author: Henry Pap (GitHub: @onkelhoy)  
+> File: `docs/custom-element.md`
+> Author: Henry Pap (GitHub: @onkelhoy)
 > Created: 2025-08-11
 
 ---
@@ -9,11 +9,12 @@
 ## Introduction
 
 The `CustomElement` base class in `@papit/core` provides:
-- A **declarative rendering system** using the [`html`](./html/README.md) tagged template.
-- **Efficient DOM updates** via `TemplateInstance` and the [parts system](./parts.md).
-- Integration with **decorators** (`@property`, `@query`, `@bind`, `@debounce`).
-- Built-in **debounced updates** to avoid unnecessary re-rendering.
-- Standardized lifecycle handling for custom elements.
+
+* A **declarative rendering system** using the [`html`](./html/README.md) tagged template.
+* **Efficient DOM updates** via `TemplateInstance` and the [parts system](./parts.md).
+* Integration with **decorators** (`@property`, `@query`, `@bind`, `@debounce`).
+* Built-in **debounced updates** to avoid unnecessary re-rendering.
+* Standardized lifecycle handling for custom elements.
 
 This base class is intended for **composition** — you extend it to create your own elements with minimal boilerplate.
 
@@ -44,7 +45,7 @@ export class CustomElement extends HTMLElement {
 
   private findQueries() { ... }
 }
-````
+```
 
 ---
 
@@ -88,13 +89,57 @@ The `CustomElement` rendering cycle works like this:
 * **`connectedCallback()`** → Called when element is added to DOM.
 * **`disconnectedCallback()`** → Called when element is removed.
 * **`attributeChangedCallback(name, old, new)`** → Syncs observed attributes to decorated properties.
-* **`firstRender()`** → Hook for initial setup (e.g., event listeners).
+* **`firstRender()`** → Hook for initial setup (e.g., event listeners, style injection).
 * **`update()`** → Renders or updates DOM.
 * **`requestUpdate()`** → Schedules debounced update.
 
 ---
 
-## 4. Decorators Integration
+## 4. Styling
+
+`CustomElement` supports built-in styling via two optional **static** properties:
+
+```ts
+static style: string;
+static styles: string[];
+```
+
+These are automatically injected into a `<style>` tag inside the component’s render root after the first render.
+
+**How it works**
+
+* On the initial render, `firstRender()` calls `renderStyle()`
+* `renderStyle()` merges `static styles` and `static style` into one CSS string via `getStyle()`
+* This CSS is applied to the component’s root (`ShadowRoot` by default)
+
+**Merge order**
+
+1. All entries from `static styles` (array)
+2. `static style` (string), appended last
+
+```ts
+class MyStyledElement extends CustomElement {
+  static style = `:host { display: block; }`;
+  static styles = [
+    `:host { padding: 0.5rem; }`,
+    `button { background: coral; color: white; }`
+  ];
+
+  render() {
+    return html`<button>Click me</button>`;
+  }
+}
+```
+
+**Notes**
+
+* Always call `super.firstRender()` if you override it, to ensure styles are applied.
+* You can update styles dynamically by changing the static properties and calling `renderStyle()` again.
+* Styles are scoped to the Shadow DOM unless shadow DOM is disabled.
+
+---
+
+## 5. Decorators Integration
 
 The base class supports:
 
@@ -106,10 +151,6 @@ The base class supports:
 Example:
 
 ```ts
-import { CustomElement } from "@papit/core/custom-element";
-import { property, query, bind, debounce } from "@papit/core/decorators";
-import { html } from "@papit/core/html";
-
 class CounterElement extends CustomElement {
   @property({ type: Number }) count = 0;
   @query("#output") output!: HTMLElement;
@@ -137,36 +178,34 @@ class CounterElement extends CustomElement {
 
 ---
 
-## 5. Debounced Updates
+## 6. Debounced Updates
 
-By default, `requestUpdate()` is debounced with `STANDARD_DELAY` (50ms) unless overridden in `shadowRootInit`:
+By default, `requestUpdate()` is debounced with `STANDARD_DELAY` (50 ms) unless overridden:
 
 ```ts
 new MyElement({ requestUpdateTimeout: 200 });
 ```
 
-This prevents excessive reflows when multiple property changes happen quickly.
+This avoids unnecessary reflows when multiple changes happen quickly.
 
 ---
 
-## 6. Query Resolution
+## 7. Query Resolution
 
 After each render, `findQueries()`:
 
-* Iterates over `this.queryMeta`.
+* Iterates over `this.queryMeta`
 * For each entry:
 
-  * Calls `root.querySelector(meta.selector)`.
-  * Assigns the found element to the decorated property.
-  * Calls `meta.load(elm)` if provided.
-
-This happens **after** `TemplateInstance.update()` so queries always return up-to-date elements.
+  * Runs `root.querySelector(meta.selector)`
+  * Assigns the found element to the decorated property
+  * Calls `meta.load(elm)` if provided
 
 ---
 
-## 7. Extending `CustomElement`
+## 8. Extending `CustomElement`
 
-Minimal example:
+Minimal:
 
 ```ts
 class HelloWorld extends CustomElement {
@@ -191,10 +230,10 @@ customElements.define("x-greeting", Greeting);
 
 ---
 
-## 8. Related Links
+## 9. Related Links
 
 * [HTML Tagged Templates](./html/README.md)
 * [Parts System](./parts.md)
 * [Decorators](./decorators/README.md)
 * [Advanced Rendering Internals](./advanced.md)
-
+* [CustomElementInternals](./custom-element-internals.md) — Extended base class with `ElementInternals` for form-associated elements.

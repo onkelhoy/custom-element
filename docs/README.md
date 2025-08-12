@@ -31,14 +31,15 @@ Standalone utilities for general use:
 
 ## 🔍 Advanced Topics
 
-For deeper insights into the internal architecture and performance considerations, see:
+Dive deeper into the internals, base classes, and performance features:
 
-- [Advanced Concepts](./advanced.md) — Covers rendering internals, template parts, update cycles, and how decorators hook into the component lifecycle.
-- [Custom Elements](./custom-element.md) — How `@papit/core`’s base class extends native Web Components.
+- [Advanced Concepts](./advanced.md) — Rendering internals, template parts, update cycles, and how decorators hook into the lifecycle.
+- [Custom Elements](./custom-element.md) — The `CustomElement` base class for building reusable web components.
+- [CustomElementInternals](./custom-element-internals.md) — Extended base class with form-associated element support via `ElementInternals`.
 - [Parts API](./parts.md) — Fine-grained DOM updates with parts and dynamic bindings.
 
 ---
 
 💡 **Tip:**  
 If you’re just starting out, begin with **[Getting Started](./getting-started.md)** and then explore **[Decorators](./decorators/README.md)**.  
-If you’re diving deep, head straight to **[Advanced Concepts](./advanced.md)**.
+If you’re building complex components or form controls, check **[CustomElementInternals](./custom-element-internals.md)** after reading **[Custom Elements](./custom-element.md)**.

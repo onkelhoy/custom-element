@@ -59,6 +59,12 @@ export class CustomElement extends HTMLElement {
   static observedAttributes = [];
 
   /**
+   * Style string(s)
+   */
+  static style: string;
+  static styles: string[];
+
+  /**
    * Returns the root node into which content is rendered:
    * - If `templateInstance` exists, returns its root element
    * - Else, if the element has a shadow root, returns it
@@ -70,12 +76,14 @@ export class CustomElement extends HTMLElement {
     return this as HTMLElement;
   }
 
+  private styleElement: HTMLStyleElement|null = null;
+
   /**
    * Creates a new custom element.
    * @param shadowRootInit Options for `attachShadow`, merged with defaults.
    *                       Can also include custom settings such as `requestUpdateTimeout`.
    */
-  constructor(shadowRootInit?: ShadowRootInit & Partial<Setting>) {
+  constructor(shadowRootInit?: Partial<ShadowRootInit> & Partial<Setting>) {
     super();
     const settings = {
       ...defaultSetting,
@@ -116,9 +124,11 @@ export class CustomElement extends HTMLElement {
 
   /**
    * Hook called after the first render completes.
-   * Subclasses can override for setup logic.
+   * Subclasses should call super.firstRender to get styling to work 
    */
-  firstRender() {}
+  firstRender() {
+    this.renderStyle();
+  }
 
   /**
    * Renders (or updates) the template into the root.
@@ -175,6 +185,7 @@ export class CustomElement extends HTMLElement {
    * Can return either:
    * - A string (will be converted to a template)
    * - An Element (template root)
+   * @returns string|Element
    */
   render():string|Element {
     return "Phuong is so kool"
@@ -200,6 +211,38 @@ export class CustomElement extends HTMLElement {
       (this as any)[meta.propertyKey] = elm;
     }
   } 
+
+  /**
+   * Calls getStyle and populates to the styleElement 
+   * it will create the element if null
+   */
+  renderStyle() {
+    const styles = this.getStyle();
+    if (this.styleElement == null)
+    {
+      this.styleElement = document.createElement("style");
+      this.root.appendChild(this.styleElement);
+    }
+
+    this.styleElement.innerHTML = styles;
+  }
+
+  /**
+   * combines both the static style together with the styles to form one big style 
+   * @returns string
+   */
+  getStyle () {
+    // Get the constructor of the child class
+    const childConstructor = (this.constructor as any) as typeof CustomElement & { style?: string; styles?: string[]; };
+
+    // Access the static property on the child class
+    const styles = [
+      ...(childConstructor.styles ?? []),
+      ...(typeof childConstructor.style === "string" ? [childConstructor.style] : []),
+    ];
+
+    return styles.join(' ');
+  }
 
   // decorator property 
   private propertyMeta?: PropertyMeta;
