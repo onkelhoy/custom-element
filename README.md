@@ -14,9 +14,6 @@
 
 It’s minimal, framework-agnostic, and designed to be easy to integrate into both small standalone widgets and large-scale design systems.
 
-> Developer status: not ready yet
-> - currently missing style
-
 ### Documentation
 
 📄 **[Full Documentation →](./docs/README.md)**
