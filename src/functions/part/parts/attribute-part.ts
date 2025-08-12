@@ -19,11 +19,12 @@ export class AttributePart implements Part {
     if (value === this.value) return;
     this.value = value;
 
+    console.log('assinging attribute', this.name, value);
     if (!value && value !== "") return void this.clear();
 
     // key is special for managing lists and we cannot rely on attribute as it assigns only on next browser frame-update 
     if (this.name === "key") { 
-      (this.element as any).__manualKey = value;
+      (this.element as any).key = value;
     }
     this.element.setAttribute(this.name, value);
   }

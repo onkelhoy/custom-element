@@ -16,7 +16,7 @@ export class ValuePart implements Part {
   ) {}
 
   apply(newValue: any) {
-    if (!newValue) return void this.clear();
+    if (!newValue && newValue != 0) return void this.clear();
     if (newValue === this.value) return;
     this.value = newValue;
 

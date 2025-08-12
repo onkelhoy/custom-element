@@ -131,7 +131,7 @@ export class Basic extends CustomElement {
           <li>
             item: ${i}
             <strong>FIVE ${this.name}</strong>
-            <ul>${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li>item: ${i}</li>`)}</ul>  
+            <ul>${new Array(Math.max(this.count, 0)).fill(0).map((_, i) => html`<li key="key${i}">item: ${i}</li>`)}</ul>  
           </li>
         `)}
       </ul>
@@ -148,8 +148,25 @@ export class Basic extends CustomElement {
     `
   }
 
+  renderAttributeCase() {
+    return html`
+      ${this.renderShowButtons()}
+      ${this.renderCountButtons()}
+
+      <div 
+        show=${this.show}
+        count=${this.count}
+        combined="show ${this.show} count ${this.count}"
+      >
+        <p>show=${this.show}</p>
+        <p>count=${this.count}</p>
+        <p>combined="show ${this.show} count ${this.count}"</p>
+      </div>
+    `
+  }
+
   render() {
-    return this.renderConditional();
+    return this.renderAttributeCase();
   }
 }
 

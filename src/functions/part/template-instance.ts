@@ -1,12 +1,18 @@
 import { getDescriptors } from '@functions/part/descriptors';
-import type { Part, PartFactory, PartHelpers, ITemplateInstance } from '@functions/part/types';
+import type { Part, PartFactory, PartHelpers, ITemplateInstance, PartDescriptor } from '@functions/part/types';
 
+
+type Meta = {
+  descriptor: PartDescriptor;
+  part: Part;
+}
 /**
  * Represents one instance of a rendered template (DOM tree + dynamic parts).
  * Can update its parts efficiently without re-rendering the entire DOM.
  */
 export class TemplateInstance implements ITemplateInstance {
   private parts: Part[];
+  private indexList: number[];
 
   constructor(
     private root: Element,
@@ -19,11 +25,24 @@ export class TemplateInstance implements ITemplateInstance {
       createTemplateInstance: (el) => new TemplateInstance(el, this.partFactory),
     };
 
-    this.parts = descriptors.map(desc => this.partFactory(desc, helpers));
+    let attributes:number[] = [];
+    let rest:number[] = [];
+
+    this.parts = descriptors.map((descriptor, index) => {
+      if (["attr", "event"].includes(descriptor.kind))
+        attributes.push(index);
+      else 
+        rest.push(index);
+
+      return this.partFactory(descriptor, helpers);
+    });
+
+    this.indexList = [...attributes, ...rest];
   }
 
   update(values: any[]) {
-    for (let i = 0; i < this.parts.length; i++) {
+    for (const i of this.indexList) 
+    {
       this.parts[i].apply(values[i]);
     }
   }

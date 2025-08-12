@@ -29,6 +29,7 @@ export function getDescriptors(root: Element): PartDescriptor[] {
       const el = node as Element;
       for (const attr of Array.from(el.attributes)) 
       {
+        console.log('attr', attr.name, attr.value)
         if (attr.value === '<!--marker-->') 
         {
           const eventMatch = attr.name.match(/^(on|@)(?<name>.*)/);
